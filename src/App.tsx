@@ -798,21 +798,35 @@ export default function App() {
 
   const handleShareWhatsApp = () => {
     if (!currentSong) return;
+    const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
     const text = encodeURIComponent(
-      `🎵 I created a personalized song titled "${currentSong.title}" for ${currentSong.target} on mysong.ai!\n` +
-      `Occasion: ${currentSong.context}\n` +
-      `Check out this custom acoustic masterpiece! 🌟`
+      `${selectedTemplate.emoji} I created a personalized ${selectedTemplate.label} song titled "${currentSong.title}" for ${currentSong.target}!\n\n` +
+      `Listen to this custom acoustic masterpiece here: https://mygiftsong.aiapps.com\n\n` +
+      `"There is no greater gift than a song..." 🌟`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
   };
 
+  const handleShareEmail = () => {
+    if (!currentSong) return;
+    const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
+    const subject = encodeURIComponent(`${selectedTemplate.emoji} A Special ${selectedTemplate.label} Song for ${currentSong.target}!`);
+    const body = encodeURIComponent(
+      `Hello!\n\nI created a personalized ${selectedTemplate.label} song titled "${currentSong.title}" for ${currentSong.target}!\n\n` +
+      `Listen to this custom acoustic masterpiece here: https://mygiftsong.aiapps.com\n\n` +
+      `Enjoy! 🎵`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+  };
+
   const handleCopyLyrics = () => {
     if (!currentSong) return;
+    const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
     const text = currentSong.lyricSections.map(s => 
       `[${s.sectionName}]\n` + s.lines.join("\n")
     ).join("\n\n");
 
-    navigator.clipboard.writeText(`"${currentSong.title}" for ${currentSong.target}\n\n${text}`);
+    navigator.clipboard.writeText(`${selectedTemplate.emoji} "${currentSong.title}" for ${currentSong.target}\nListen here: https://mygiftsong.aiapps.com\n\n${text}`);
     setCopiedLyrics(true);
     setTimeout(() => setCopiedLyrics(false), 2000);
   };
@@ -1825,75 +1839,96 @@ export default function App() {
       {/* --- KEEPSAKE MODAL --- */}
       {showKeepsake && currentSong && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-[#faf6f0] text-[#1c1612] w-full max-w-lg rounded-2xl shadow-2xl border-8 border-[#C5A880]/40 overflow-hidden relative"
-          >
-            {/* Modal actions */}
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="p-1.5 bg-[#1c1612]/5 hover:bg-[#1c1612]/10 rounded-full text-xs font-mono flex items-center gap-1 transition-colors"
-                title="Print KeepSake Card"
+          {(() => {
+            const tpl = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                style={{ backgroundColor: tpl.colorScheme.background, borderColor: tpl.colorScheme.primary }}
+                className="w-full max-w-lg rounded-[2rem] shadow-2xl border-8 overflow-hidden relative"
               >
-                Print
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowKeepsake(false)}
-                className="p-1 text-[#1c1612]/60 hover:text-[#1c1612] rounded-full"
-              >
-                <X size={20} />
-              </button>
-            </div>
+                {/* Decorative header */}
+                <div style={{ backgroundColor: tpl.colorScheme.primary }} className="w-full py-8 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10" style={{ backgroundImage: 'radial-gradient(circle at center, transparent 0, rgba(0,0,0,0.1) 100%)' }}></div>
+                  <span className="text-6xl relative z-10 drop-shadow-md">{tpl.emoji}</span>
+                  <h2 className="text-white font-display font-extrabold text-3xl mt-3 relative z-10 tracking-widest uppercase text-shadow-sm">{tpl.label}</h2>
+                </div>
 
-            {/* Keepsake Portrait frame */}
-            <div className="p-8 md:p-10 space-y-6 pt-12 text-center text-print">
-              
-              {/* Elegant header */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-mono tracking-widest text-[#C5A880] uppercase font-bold">A Lute & Lyre Dedication Track</p>
-                <h3 className="text-3xl font-display font-bold text-[#201813]">{currentSong.title}</h3>
-                <div className="w-16 h-px bg-[#C5A880] mx-auto my-3"></div>
-                <p className="text-xs uppercase font-mono tracking-wider font-semibold text-[#C5A880]">Playable song for {currentSong.target}</p>
-              </div>
+                {/* Modal actions */}
+                <div className="absolute top-4 right-4 flex gap-2 z-20">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="p-1.5 bg-black/20 hover:bg-black/30 rounded-full text-white text-xs font-mono flex items-center gap-1 transition-colors backdrop-blur-sm"
+                    title="Print KeepSake Card"
+                  >
+                    Print
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowKeepsake(false)}
+                    className="p-1 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full backdrop-blur-sm transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
-              {/* Body message section */}
-              <div className="border border-[#C5A880]/30 rounded-xl p-5 bg-white/70 max-h-[240px] overflow-y-auto text-left space-y-4">
-                {currentSong.lyricSections.filter(s => s.sectionName !== "Intro").map((section, idx) => (
-                  <div key={idx} className="space-y-1 text-xs">
-                    <p className="font-mono text-[9px] text-[#C5A880] font-bold uppercase">{section.sectionName}</p>
-                    {section.lines.map((line, lIdx) => (
-                      <p key={lIdx} className="font-sans text-[#1c1612]/90 leading-relaxed font-medium">{line}</p>
+                {/* Keepsake Portrait frame */}
+                <div className="p-8 md:p-10 space-y-6 text-center text-print">
+                  
+                  {/* Elegant header */}
+                  <div className="space-y-2">
+                    <p style={{ color: tpl.colorScheme.primary }} className="text-[10px] font-mono tracking-widest uppercase font-bold bg-white/50 inline-block px-3 py-1 rounded-full">A Custom Song Dedication</p>
+                    <h3 className="text-3xl font-display font-black text-gray-800 leading-tight">{currentSong.title}</h3>
+                    <div style={{ backgroundColor: tpl.colorScheme.secondary }} className="w-16 h-1.5 mx-auto my-4 rounded-full"></div>
+                    <p style={{ color: tpl.colorScheme.primary }} className="text-sm uppercase font-sans tracking-wider font-semibold">Especially for <span className="font-bold text-gray-900 text-lg block mt-1">{currentSong.target}</span></p>
+                  </div>
+
+                  {/* Body message section */}
+                  <div className="border-2 border-black/5 rounded-2xl p-5 bg-white/70 max-h-[240px] overflow-y-auto text-left space-y-4 shadow-inner">
+                    {currentSong.lyricSections.filter(s => s.sectionName !== "Intro").map((section, idx) => (
+                      <div key={idx} className="space-y-1 text-xs">
+                        <p style={{ color: tpl.colorScheme.primary }} className="font-mono text-[10px] font-extrabold uppercase">{section.sectionName}</p>
+                        {section.lines.map((line, lIdx) => (
+                          <p key={lIdx} className="font-sans text-gray-800 leading-relaxed font-medium">{line}</p>
+                        ))}
+                      </div>
                     ))}
                   </div>
-                ))}
-              </div>
 
-              {/* Keepsake Footer signature info */}
-              <div className="flex justify-between items-center pt-4 border-t border-[#C5A880]/30 text-[9px] font-mono text-[#C5A880]">
-                <span>MEMBER CERTIFICATION</span>
-                <span className="uppercase">mygiftsong.aiapps.com - {currentSong.genre}</span>
-              </div>
+                  {/* Action row at bottom */}
+                  <div className="pt-4 flex flex-wrap justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleShareWhatsApp}
+                      className="px-4 py-2.5 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                    >
+                      <Phone size={16} /> WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShareEmail}
+                      className="px-4 py-2.5 bg-[#4285F4] hover:bg-[#3367D6] text-white text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                    >
+                      <Send size={16} /> Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyLyrics}
+                      style={{ backgroundColor: tpl.colorScheme.primary }}
+                      className="px-4 py-2.5 text-white hover:brightness-110 text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                    >
+                      {copiedLyrics ? <Check size={16} /> : <Copy size={16} />}
+                      {copiedLyrics ? "Copied!" : "Copy Link"}
+                    </button>
+                  </div>
 
-              {/* Action row at bottom */}
-              <div className="pt-2 flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleCopyLyrics}
-                  className="px-4 py-2 bg-[#201813] hover:bg-[#3d2e24] text-[#faf6f0] text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copiedLyrics ? <Check size={14} /> : <Copy size={14} />}
-                  {copiedLyrics ? "Copied!" : "Copy Full Lyrics"}
-                </button>
-              </div>
-
-            </div>
-
-          </motion.div>
+                </div>
+              </motion.div>
+            );
+          })()}
         </div>
       )}
 
