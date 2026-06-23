@@ -732,17 +732,31 @@ export default function App() {
         setActiveVariationIdx(0);
       }
 
-      const genreAudioUrls: Record<string, string> = {
-        "Acoustic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        "Bluegrass": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        "Rustic Lute": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-        "Modern Worship": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-        "Lofi Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-        "Indie Pop": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3"
-      };
+      // Extract real Suno audio URL from API response
+      let liveTrackUrl = data.audioUrl || data.audio_url || data.url || 
+                         (data.song && data.song.audioUrl) ||
+                         (data.data && data.data[0]?.audio_url) || 
+                         (Array.isArray(data) && data[0]?.audio_url);
 
-      const highFidelityTrack = genreAudioUrls[customGenre] || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-      setAudioUrl(highFidelityTrack);
+      // Fallback to mock only if no real URL is provided
+      if (!liveTrackUrl) {
+        console.warn("No Suno audio URL in response, using mock fallback");
+        const genreAudioUrls: Record<string, string> = {
+          "Acoustic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          "Bluegrass": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+          "Rustic Lute": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+          "Modern Worship": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+          "Lofi Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+          "Indie Pop": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3"
+        };
+        liveTrackUrl = genreAudioUrls[customGenre] || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+      }
+
+      setAudioUrl(liveTrackUrl);
+      if (audioRef.current) {
+        audioRef.current.src = liveTrackUrl;
+        audioRef.current.load();
+      }
 
       try {
         const speechRes = await fetch("/api/generate-avatar-intro", {
