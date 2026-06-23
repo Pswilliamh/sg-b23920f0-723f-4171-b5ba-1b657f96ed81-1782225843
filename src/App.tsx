@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { 
   Music, Sparkles, Share2, Play, Pause, Volume2, VolumeX, 
   RefreshCw, Download, User, Calendar, Sliders, ChevronRight,
-  Disc, Star, Phone, Instagram, Send, Info, Check, Copy, X, Clock, Gift
+  Disc, Star, Phone, Instagram, Send, Info, Check, Copy, X, Clock, Gift, Lock
 } from "lucide-react";
 import { SongData, SetType, LyricSection, VoiceStyle, OccasionType, OccasionTemplate } from "./types";
 import { LyricCanvas } from "./components/LyricCanvas";
@@ -2107,7 +2107,19 @@ export default function App() {
       {/* --- FOOTER --- */}
       <footer className="studio-footer">
         <div className="footer-container">
-          <p className="footer-text">© 2026 mygiftsong.org | All Rights Reserved.</p>
+          <p className="footer-text flex items-center justify-center gap-2">
+            © 2026 mygiftsong.org | All Rights Reserved.
+            <button 
+              type="button"
+              onClick={() => {
+                window.location.hash = '#test-studio';
+              }} 
+              className="text-white/10 hover:text-[#FFD700] transition-colors p-1"
+              title="Admin Access"
+            >
+              <Lock size={10} />
+            </button>
+          </p>
           <a href="https://inflow.com/your-partner-id" target="_blank" rel="noopener noreferrer" className="affiliate-link">
             Powered by <span className="gold-text">Inflow</span> Network Architecture
           </a>
