@@ -34,6 +34,18 @@ export default function App() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isPurposeExpanded, setIsPurposeExpanded] = useState(false);
   
+  // Voice style options for song generation
+  const voiceStyleOptions: Array<{ id: VoiceStyle; label: string; tags: string; icon: string; description: string }> = [
+    { id: "male-warm", label: "Male Warm", tags: "male vocalist, warm voice, soulful, intimate", icon: "🎤", description: "Gentle, heartfelt male voice" },
+    { id: "male-bright", label: "Male Bright", tags: "male vocalist, bright voice, energetic, uplifting", icon: "🌟", description: "Energetic, cheerful male voice" },
+    { id: "female-soft", label: "Female Soft", tags: "female vocalist, soft voice, gentle, tender", icon: "🎵", description: "Sweet, nurturing female voice" },
+    { id: "female-powerful", label: "Female Powerful", tags: "female vocalist, powerful voice, strong, emotive", icon: "⭐", description: "Strong, moving female voice" },
+    { id: "duo-harmony", label: "Duo Harmony", tags: "duet, male and female, harmony, blended voices", icon: "👫", description: "Male & female harmonizing" },
+    { id: "choir-ensemble", label: "Choir Ensemble", tags: "choir, ensemble, multiple voices, angelic", icon: "👥", description: "Heavenly choir arrangement" },
+    { id: "child-innocent", label: "Child Voice", tags: "child vocalist, innocent, pure, sweet", icon: "👶", description: "Pure, innocent child's voice" },
+    { id: "elder-wisdom", label: "Elder Wisdom", tags: "mature vocalist, wise, storytelling, experienced", icon: "👴", description: "Wise, experienced narrator" }
+  ];
+  
   // --- Stripe Live Session Variables ---
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const publishableKey = (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || "";
