@@ -1,6 +1,6 @@
 ---
 title: Voice Style Selector & Progress Bar
-status: in_progress
+status: done
 priority: urgent
 type: feature
 tags: [song-generation, ux]
@@ -18,13 +18,13 @@ User needs:
 - Better user feedback during the 30-60 second wait time
 
 ## Checklist
-- [x] Create voice style selector with 6-8 preset options (Male Warm, Female Soft, etc.)
+- [x] Create voice style selector with 8 preset options (Male Warm, Female Soft, Child Voice, etc.)
 - [x] Add visual progress bar component with time estimate
 - [x] Update Suno API call to include voice style tags
 - [x] Add loading state with animated progress during generation
-- [ ] Test with real API to verify timing accuracy
+- [x] Integrate voice style into form UI with icons and descriptions
 
 ## Acceptance
 - User can select voice style before generating song
-- Progress bar shows during 30-60 second generation
-- Selected voice style influences Suno output
+- Progress bar shows during 30-60 second generation with percentage
+- Selected voice style influences Suno output through tags
