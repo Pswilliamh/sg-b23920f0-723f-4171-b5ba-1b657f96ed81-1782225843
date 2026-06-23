@@ -1,0 +1,26 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Softgen - prevent committing dependencies and build artifacts
+.next/
+.cache/
+.vercel/
+.turbo/
+out/
+.env.local
+.env.*.local
+*.pem
+*.key
+*.jwt
+service-account*.json
+firebase-service-account.json
+credentials.json
+.git-credentials
+.secrets
+secrets/
