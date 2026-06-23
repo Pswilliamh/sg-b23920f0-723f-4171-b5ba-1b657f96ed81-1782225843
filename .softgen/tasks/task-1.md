@@ -18,10 +18,10 @@ User needs:
 - Better user feedback during the 30-60 second wait time
 
 ## Checklist
-- [ ] Create voice style selector with 6-8 preset options (Male Warm, Female Soft, etc.)
-- [ ] Add visual progress bar component with time estimate
-- [ ] Update Suno API call to include voice style tags
-- [ ] Add loading state with animated progress during generation
+- [x] Create voice style selector with 6-8 preset options (Male Warm, Female Soft, etc.)
+- [x] Add visual progress bar component with time estimate
+- [x] Update Suno API call to include voice style tags
+- [x] Add loading state with animated progress during generation
 - [ ] Test with real API to verify timing accuracy
 
 ## Acceptance

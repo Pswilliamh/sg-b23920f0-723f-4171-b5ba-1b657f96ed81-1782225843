@@ -1,5 +1,22 @@
 export type SetType = "quick" | "full" | "extended" | "premium" | "legacy";
 
+export type VoiceStyle = 
+  | "male-warm"
+  | "male-bright"
+  | "female-soft"
+  | "female-powerful"
+  | "duo-harmony"
+  | "choir-ensemble"
+  | "child-innocent"
+  | "elder-wisdom";
+
+export interface VoiceStyleOption {
+  id: VoiceStyle;
+  label: string;
+  tags: string;
+  icon: string;
+}
+
 export interface LyricSection {
   sectionName: string; // e.g. "Intro", "Verse 1", "Chorus", "Verse 2", "Outro"
   lines: string[];

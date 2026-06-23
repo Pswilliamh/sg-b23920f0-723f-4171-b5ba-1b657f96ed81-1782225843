@@ -10,7 +10,7 @@ import {
   RefreshCw, Download, User, Calendar, Sliders, ChevronRight,
   Disc, Star, Phone, Instagram, Send, Info, Check, Copy, X, Clock
 } from "lucide-react";
-import { SongData, SetType, LyricSection } from "./types";
+import { SongData, SetType, LyricSection, VoiceStyle } from "./types";
 import { LyricCanvas } from "./components/LyricCanvas";
 import { luteEngineInstance } from "./components/AudioEngine";
 
@@ -18,6 +18,8 @@ export default function App() {
   // --- Lifecycles & State Management ---
   const [target, setTarget] = useState("");
   const [context, setContext] = useState("");
+  const [voiceStyle, setVoiceStyle] = useState<VoiceStyle>("male-warm");
+  const [generationProgress, setGenerationProgress] = useState(0);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
   const previewVideoSrc = "https://drive.google.com/uc?export=download&id=1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC";
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -594,9 +596,33 @@ export default function App() {
     setError("");
     setIsGenerating(true);
     setIsRendering(true);
+    setGenerationProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 95) {
+          clearInterval(progressInterval);
+          return 95;
+        }
+        return prev + (Math.random() * 8 + 2);
+      });
+    }, 1000);
+
+    const voiceStyleOptions: Array<{ id: VoiceStyle; label: string; tags: string; icon: string; description: string }> = [
+      { id: "male-warm", label: "Male Warm", tags: "male vocalist, warm voice, soulful, intimate", icon: "🎤", description: "Gentle, heartfelt male voice" },
+      { id: "male-bright", label: "Male Bright", tags: "male vocalist, bright voice, energetic, uplifting", icon: "🌟", description: "Energetic, cheerful male voice" },
+      { id: "female-soft", label: "Female Soft", tags: "female vocalist, soft voice, gentle, tender", icon: "🎵", description: "Sweet, nurturing female voice" },
+      { id: "female-powerful", label: "Female Powerful", tags: "female vocalist, powerful voice, strong, emotive", icon: "⭐", description: "Strong, moving female voice" },
+      { id: "duo-harmony", label: "Duo Harmony", tags: "duet, male and female, harmony, blended voices", icon: "👫", description: "Male & female harmonizing" },
+      { id: "choir-ensemble", label: "Choir Ensemble", tags: "choir, ensemble, multiple voices, angelic", icon: "👥", description: "Heavenly choir arrangement" },
+      { id: "child-innocent", label: "Child Voice", tags: "child vocalist, innocent, pure, sweet", icon: "👶", description: "Pure, innocent child's voice" },
+      { id: "elder-wisdom", label: "Elder Wisdom", tags: "mature vocalist, wise, storytelling, experienced", icon: "👴", description: "Wise, experienced narrator" }
+    ];
+
+    const selectedVoice = voiceStyleOptions.find(v => v.id === voiceStyle);
+    const voiceTags = selectedVoice ? selectedVoice.tags : "male vocalist, warm voice";
 
     try {
-      // 1. Prepare user's context payload and execute fetch request to `/api/generate-song` gateway
       const res = await fetch("/api/generate-song", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -605,6 +631,7 @@ export default function App() {
           context: context.trim(),
           setType,
           customGenre,
+          voiceStyle: voiceTags,
           gifterEmail: gifterEmail.trim(),
           recipientEmail: recipientEmail.trim()
         })
@@ -615,6 +642,7 @@ export default function App() {
         throw new Error(data.error || "Minstrel song generation failed. Please try again.");
       }
 
+      setGenerationProgress(100);
       const returnedSong: SongData = data.song;
       setCurrentSong(returnedSong);
 
@@ -626,7 +654,6 @@ export default function App() {
         setActiveVariationIdx(0);
       }
 
-      // 2. Set theme-based high-fidelity Suno AI audio URL path
       const genreAudioUrls: Record<string, string> = {
         "Acoustic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
         "Bluegrass": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
@@ -639,7 +666,6 @@ export default function App() {
       const highFidelityTrack = genreAudioUrls[customGenre] || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
       setAudioUrl(highFidelityTrack);
 
-      // Play vocal speech introductory elements if active
       try {
         const speechRes = await fetch("/api/generate-avatar-intro", {
           method: "POST",
@@ -658,9 +684,12 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Trouble processing acoustic song generation. Please retry.");
+      setGenerationProgress(0);
     } finally {
+      clearInterval(progressInterval);
       setIsGenerating(false);
       setIsRendering(false);
+      setTimeout(() => setGenerationProgress(0), 2000);
     }
   };
 
@@ -924,16 +953,30 @@ export default function App() {
 
                   {/* BOTTOM video player or custom audio player or loader depending on Suno state */}
                   {isGenerating ? (
-                    <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/30 shadow-[0_0_25px_rgba(255,215,0,0.15)] bg-[#120e0a]/90 flex flex-col items-center justify-center aspect-video min-h-[200px] p-6 space-y-4">
+                    <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/30 shadow-[0_0_25px_rgba(255,215,0,0.15)] bg-[#120e0a]/90 flex flex-col items-center justify-center aspect-video min-h-[200px] p-6 space-y-5">
                       <div className="relative flex items-center justify-center">
                         <Disc size={40} className="text-[#FFD700] animate-spin [animation-duration:3s]" />
                         <Sparkles size={16} className="text-[#FFD700] absolute -top-1 -right-1 animate-ping" />
                       </div>
-                      <div className="space-y-1 text-center max-w-xs">
+                      <div className="space-y-2 text-center max-w-xs w-full">
                         <p className="text-xs font-mono font-bold text-[#FFD700] uppercase tracking-widest animate-pulse">HADDI IS STRUMMING...</p>
                         <p className="text-[10px] text-[#FAF9F6]/70 font-sans italic leading-relaxed">
                           "Plucking silver strings with Sumatra passion and Jakarta energy..."
                         </p>
+                        
+                        <div className="w-full bg-black/60 rounded-full h-3 overflow-hidden border border-[#FFD700]/30 mt-4">
+                          <div 
+                            className="h-full bg-gradient-to-r from-[#FFD700] via-[#FCE068] to-[#FFD700] transition-all duration-500 ease-out relative"
+                            style={{ width: `${generationProgress}%` }}
+                          >
+                            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-[9px] font-mono text-[#FFD700]/70 mt-1.5">
+                          <span>⏱️ Estimated: 30-60 seconds</span>
+                          <span className="font-bold">{Math.round(generationProgress)}%</span>
+                        </div>
                       </div>
                     </div>
                   ) : audioUrl ? (
@@ -1240,6 +1283,33 @@ export default function App() {
                         )}
                       </div>
                     )}
+
+                    {/* [Voice Style Selector] */}
+                    <div className="space-y-3 bg-black/50 border border-[#C5A880]/20 p-4 rounded-xl">
+                      <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
+                        <Volume2 size={16} /> Choose Voice Character:
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {voiceStyleOptions.map((voice) => (
+                          <button
+                            key={voice.id}
+                            type="button"
+                            onClick={() => setVoiceStyle(voice.id)}
+                            className={`p-3 rounded-xl border text-left transition-all ${
+                              voiceStyle === voice.id
+                                ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+                                : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">{voice.icon}</span>
+                              <span className="text-xs font-bold text-[#FFD700]">{voice.label}</span>
+                            </div>
+                            <p className="text-[10px] text-white/60 font-sans">{voice.description}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
                     {/* [Musical Style Theme Selector] */}
                     <div className="style-selector-section">
