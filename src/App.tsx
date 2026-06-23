@@ -8,9 +8,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { 
   Music, Sparkles, Share2, Play, Pause, Volume2, VolumeX, 
   RefreshCw, Download, User, Calendar, Sliders, ChevronRight,
-  Disc, Star, Phone, Instagram, Send, Info, Check, Copy, X, Clock
+  Disc, Star, Phone, Instagram, Send, Info, Check, Copy, X, Clock, Gift
 } from "lucide-react";
-import { SongData, SetType, LyricSection, VoiceStyle } from "./types";
+import { SongData, SetType, LyricSection, VoiceStyle, OccasionType, OccasionTemplate } from "./types";
 import { LyricCanvas } from "./components/LyricCanvas";
 import { luteEngineInstance } from "./components/AudioEngine";
 
@@ -19,6 +19,7 @@ export default function App() {
   const [target, setTarget] = useState("");
   const [context, setContext] = useState("");
   const [voiceStyle, setVoiceStyle] = useState<VoiceStyle>("male-warm");
+  const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
   const previewVideoSrc = "https://drive.google.com/uc?export=download&id=1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC";
@@ -44,6 +45,82 @@ export default function App() {
     { id: "choir-ensemble", label: "Choir Ensemble", tags: "choir, ensemble, multiple voices, angelic", icon: "👥", description: "Heavenly choir arrangement" },
     { id: "child-innocent", label: "Child Voice", tags: "child vocalist, innocent, pure, sweet", icon: "👶", description: "Pure, innocent child's voice" },
     { id: "elder-wisdom", label: "Elder Wisdom", tags: "mature vocalist, wise, storytelling, experienced", icon: "👴", description: "Wise, experienced narrator" }
+  ];
+
+  // Occasion templates for gift cards
+  const occasionTemplates: OccasionTemplate[] = [
+    { 
+      id: "birthday", 
+      label: "Birthday", 
+      icon: "🎂", 
+      emoji: "🎉",
+      colorScheme: { primary: "#FF6B9D", secondary: "#FFA500", background: "#FFF5E6" },
+      description: "Celebrate another trip around the sun"
+    },
+    { 
+      id: "anniversary", 
+      label: "Anniversary", 
+      icon: "💍", 
+      emoji: "❤️",
+      colorScheme: { primary: "#C41E3A", secondary: "#FFD700", background: "#FFF0F5" },
+      description: "Honor your love story milestone"
+    },
+    { 
+      id: "new-baby", 
+      label: "New Baby", 
+      icon: "👶", 
+      emoji: "🍼",
+      colorScheme: { primary: "#87CEEB", secondary: "#FFB6C1", background: "#F0F8FF" },
+      description: "Welcome the newest family blessing"
+    },
+    { 
+      id: "graduation", 
+      label: "Graduation", 
+      icon: "🎓", 
+      emoji: "🌟",
+      colorScheme: { primary: "#1E3A8A", secondary: "#FFD700", background: "#F0F4F8" },
+      description: "Celebrate achievement and new beginnings"
+    },
+    { 
+      id: "promotion", 
+      label: "Promotion", 
+      icon: "🏆", 
+      emoji: "📈",
+      colorScheme: { primary: "#059669", secondary: "#FFD700", background: "#F0FDF4" },
+      description: "Honor professional success"
+    },
+    { 
+      id: "mothers-day", 
+      label: "Mother's Day", 
+      icon: "💐", 
+      emoji: "🌸",
+      colorScheme: { primary: "#DB2777", secondary: "#FCA5A5", background: "#FDF2F8" },
+      description: "Express gratitude to Mom"
+    },
+    { 
+      id: "fathers-day", 
+      label: "Father's Day", 
+      icon: "👔", 
+      emoji: "⚡",
+      colorScheme: { primary: "#1F2937", secondary: "#3B82F6", background: "#F9FAFB" },
+      description: "Honor Dad's strength and love"
+    },
+    { 
+      id: "wedding", 
+      label: "Wedding", 
+      icon: "💑", 
+      emoji: "💒",
+      colorScheme: { primary: "#BE185D", secondary: "#F9A8D4", background: "#FDF2F8" },
+      description: "Bless the happy couple"
+    },
+    { 
+      id: "celebration", 
+      label: "Just Because", 
+      icon: "🎉", 
+      emoji: "✨",
+      colorScheme: { primary: "#7C3AED", secondary: "#FBBF24", background: "#FAF5FF" },
+      description: "Spread joy for any reason"
+    }
   ];
   
   // --- Stripe Live Session Variables ---
@@ -1284,6 +1361,33 @@ export default function App() {
                         )}
                       </div>
                     )}
+
+                    {/* [Occasion Template Selector] */}
+                    <div className="space-y-3 bg-black/50 border border-[#C5A880]/20 p-4 rounded-xl">
+                      <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
+                        <Gift size={16} /> Choose Occasion:
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {occasionTemplates.map((occ) => (
+                          <button
+                            key={occ.id}
+                            type="button"
+                            onClick={() => setOccasion(occ.id)}
+                            className={`p-2.5 rounded-xl border text-center transition-all ${
+                              occasion === occ.id
+                                ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+                                : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"
+                            }`}
+                          >
+                            <div className="text-2xl mb-1">{occ.icon}</div>
+                            <div className="text-[10px] font-bold text-[#FFD700]">{occ.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-white/50 font-sans italic">
+                        {occasionTemplates.find(o => o.id === occasion)?.description}
+                      </p>
+                    </div>
 
                     {/* [Voice Style Selector] */}
                     <div className="space-y-3 bg-black/50 border border-[#C5A880]/20 p-4 rounded-xl">

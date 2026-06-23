@@ -10,11 +10,35 @@ export type VoiceStyle =
   | "child-innocent"
   | "elder-wisdom";
 
+export type OccasionType =
+  | "birthday"
+  | "anniversary"
+  | "new-baby"
+  | "graduation"
+  | "promotion"
+  | "mothers-day"
+  | "fathers-day"
+  | "wedding"
+  | "celebration";
+
 export interface VoiceStyleOption {
   id: VoiceStyle;
   label: string;
   tags: string;
   icon: string;
+}
+
+export interface OccasionTemplate {
+  id: OccasionType;
+  label: string;
+  icon: string;
+  emoji: string;
+  colorScheme: {
+    primary: string;
+    secondary: string;
+    background: string;
+  };
+  description: string;
 }
 
 export interface LyricSection {

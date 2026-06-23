@@ -1,6 +1,6 @@
 ---
 title: Shareable Gift Card Templates
-status: todo
+status: in_progress
 priority: high
 type: feature
 tags: [templates, sharing]
@@ -10,21 +10,38 @@ position: 2
 ---
 
 ## Notes
-Create beautiful shareable templates that wrap the generated song as a gift card, ready to send via email/WhatsApp for the new baby.
+Create beautiful, shareable gift card templates for various life celebrations. Users can select an occasion template, generate their song, and share via WhatsApp, email, or social media.
 
-User needs:
-- Pre-designed gift card templates with baby themes
-- Easy sharing options (email, WhatsApp link, download)
-- Professional presentation of the song gift
+Occasion templates needed (5-10 options):
+- 🎂 Birthday - festive, colorful, celebratory
+- 💍 Anniversary - romantic, elegant, timeless
+- 👶 New Baby - soft, gentle, welcoming
+- 🎓 Graduation - achievement, success, milestone
+- 🏆 Promotion - professional, congratulatory
+- 💐 Mother's Day - warm, appreciative, loving
+- 👔 Father's Day - strong, grateful, honoring
+- 💑 Wedding - romantic, joyful, blessed
+- 🎉 General Celebration - versatile, uplifting
+
+Each template should:
+- Match the occasion's emotional tone
+- Include decorative elements (icons, borders, colors)
+- Display song title, recipient name, gifter name
+- Have a "Play Song" button/link
+- Work beautifully on mobile and desktop
+- Be shareable via WhatsApp, Email, SMS, social media
 
 ## Checklist
-- [ ] Design 4-5 baby-themed gift card templates (Welcome Baby, New Arrival, etc.)
-- [ ] Add template selector to song player
-- [ ] Create shareable link/image export functionality
-- [ ] Add WhatsApp share button with pre-filled message
-- [ ] Add email share option with gift card preview
+- [ ] Create occasion selector dropdown in the form
+- [ ] Design 5-10 gift card templates with unique visual themes
+- [ ] Add template preview after song generation
+- [ ] Implement share functionality (WhatsApp, Email, Copy Link)
+- [ ] Make templates responsive for mobile viewing
+- [ ] Add "Download Card" option for saving/printing
 
 ## Acceptance
-- User can choose gift card template after song generation
-- Song can be shared via WhatsApp/email with template
+- User can select occasion type before generating song
+- After generation, beautiful gift card appears with selected theme
+- Card can be shared via WhatsApp/email with template
 - Template looks professional on mobile and desktop
+- All 5-10 occasions have distinct, appropriate designs
