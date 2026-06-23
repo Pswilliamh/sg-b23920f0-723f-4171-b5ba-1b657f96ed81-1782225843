@@ -32,8 +32,8 @@ Each template should:
 - Be shareable via WhatsApp, Email, SMS, social media
 
 ## Checklist
-- [ ] Create occasion selector dropdown in the form
-- [ ] Design 5-10 gift card templates with unique visual themes
+- [x] Create occasion selector in the form with 9 preset options
+- [ ] Design 9 gift card templates with unique visual themes
 - [ ] Add template preview after song generation
 - [ ] Implement share functionality (WhatsApp, Email, Copy Link)
 - [ ] Make templates responsive for mobile viewing
@@ -44,4 +44,4 @@ Each template should:
 - After generation, beautiful gift card appears with selected theme
 - Card can be shared via WhatsApp/email with template
 - Template looks professional on mobile and desktop
-- All 5-10 occasions have distinct, appropriate designs
+- All 9 occasions have distinct, appropriate designs
