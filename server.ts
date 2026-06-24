@@ -7,7 +7,7 @@ import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import https from "https";
 import { promisify } from "util";
-import { GoogleGenAI, SchemaType as Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config({ path: ".env.local" });
 
@@ -160,47 +160,47 @@ const getDummySong = (target: string, context: string, setType: string, index: n
 // Base Song Schema Helper to ensure robust structured output parsing
 const getSongSchema = () => {
   return {
-    type: Type.OBJECT,
+    type: "object",
     properties: {
       title: {
-        type: Type.STRING,
+        type: "string",
         description: "A gorgeous, poetic, creative title for the acoustic folk song. DO NOT include quotes around it.",
       },
       artistIntro: {
-        type: Type.STRING,
+        type: "string",
         description: "A highly personal, warm, humble spoken introduction from Haddi the Minstrel. Greet the recipient/user with friendly greetings like 'Selamat datang' or 'Halo kawanku', mention that this is your digital musician street corner in Jakarta and that you are originally from Sumatra. Talk about plucking the 'silver strings' to bring them honor and blessing, operating under the law that 'There is no greater gift than a song... it is worth more than a thousand words!'. Greet them with sincere respect and soul, custom tailored to the name and storytelling context.",
       },
       tempo: {
-        type: Type.STRING,
+        type: "string",
         description: "Speed description with BPM suitable for street guitar, e.g., 'Soulful Kampung Strum (85 BPM)' or 'Lively Street Beat (105 BPM)'",
       },
       genre: {
-        type: Type.STRING,
+        type: "string",
         description: "The specific folk acoustic style, e.g., 'Jakarta Street Folk', 'Sumatran Acoustic Ballad', 'Soulful Kampung Strum'",
       },
       lyricSections: {
-        type: Type.ARRAY,
+        type: "array",
         description: "The blocks of lyrics that compose the performance. Must include Intro, at least 1 Verse, Chorus, and optionally dynamic sections.",
         items: {
-          type: Type.OBJECT,
+          type: "object",
           properties: {
             sectionName: {
-              type: Type.STRING,
+              type: "string",
               description: "The label, e.g. 'Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Outro'",
             },
             lines: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
+              type: "array",
+              items: { type: "string" },
               description: "The actual poetic lines of the lyric. Do NOT make them empty.",
             },
             chords: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
+              type: "array",
+              items: { type: "string" },
               description: "The continuous simple guitar chord values (e.g. G, C, D, Em, Am) matching this progression. Should match the length of the lines array.",
             },
             timestamps: {
-              type: Type.ARRAY,
-              items: { type: Type.INTEGER },
+              type: "array",
+              items: { type: "integer" },
               description: "Timestamp in seconds where each lyric line is delivered or sung. Progression goes chronological, starting at 0.",
             },
           },
@@ -287,7 +287,7 @@ You MUST integrate the mandatory vocabulary matrix terms: Blessing, Covenant, Gr
     if (isExtended) {
       // In extended mode, we want three distinct variations
       const responseSchema = {
-        type: Type.OBJECT,
+        type: "object",
         properties: {
           song1: getSongSchema(),
           song2: getSongSchema(),
