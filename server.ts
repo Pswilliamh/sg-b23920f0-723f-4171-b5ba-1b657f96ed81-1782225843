@@ -419,20 +419,18 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       console.log("[Suno Bridge] Prompt:", prompt.substring(0, 100));
       console.log("[Suno Bridge] Tags:", cleanTags);
       
-      // 302.AI uses OpenAI-compatible format
-      // Updated endpoint based on 302.AI's proxy structure
-      const response = await fetch("https://api.302.ai/v1/music/generations", {
+      // 302.AI's actual Suno endpoint format
+      const response = await fetch("https://api.302.ai/v1/suno/v3/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sunoApiKey}`
         },
         body: JSON.stringify({
-          model: "suno-v3.5",
-          prompt: prompt,
-          style: cleanTags,
-          instrumental: make_instrumental === true,
-          wait_audio: wait_audio_ready === true
+          gpt_description_prompt: prompt,
+          make_instrumental: make_instrumental === true,
+          mv: "chirp-v3-5",
+          tags: cleanTags
         })
       });
 
@@ -447,9 +445,9 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
         // Try multiple response formats
         let extractedUrls: string[] = [];
         
-        // OpenAI-style format
+        // 302.AI Suno response format
         if (result.data && Array.isArray(result.data)) {
-          extractedUrls = result.data.map((item: any) => item.url || item.audio_url).filter(Boolean);
+          extractedUrls = result.data.map((item: any) => item.audio_url || item.url).filter(Boolean);
         }
         // Direct array
         else if (Array.isArray(result)) {
