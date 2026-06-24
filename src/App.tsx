@@ -23,6 +23,7 @@ export default function App() {
   const [customGenre, setCustomGenre] = useState("Acoustic Folk");
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string>("");
+  const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
@@ -820,10 +821,32 @@ export default function App() {
       return;
     }
 
+    if (uploadedPhotos.length < 3) {
+      setError("Please upload at least 3 photos for the video!");
+      return;
+    }
+
     setIsGeneratingVideo(true);
     setError("");
 
     try {
+      // Step 1: Upload photos to server
+      const formData = new FormData();
+      uploadedPhotos.forEach((photo, idx) => {
+        formData.append('photos', photo);
+      });
+
+      const uploadRes = await fetch("/api/upload-photos", {
+        method: "POST",
+        body: formData
+      });
+
+      const uploadData = await uploadRes.json();
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || "Photo upload failed");
+      }
+
+      // Step 2: Generate video with uploaded photo paths
       const response = await fetch("/api/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -832,7 +855,7 @@ export default function App() {
           lyrics: currentSong.lyrics,
           title: currentSong.title,
           videoLength: videoLength,
-          photos: [] // User photo upload can be added later
+          photoPaths: uploadData.photoPaths
         })
       });
 
@@ -851,6 +874,36 @@ export default function App() {
     } finally {
       setIsGeneratingVideo(false);
     }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Validate: max 5 images, each under 5MB
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        setError(`${file.name} is not an image file`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`${file.name} exceeds 5MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    const totalPhotos = uploadedPhotos.length + validFiles.length;
+    if (totalPhotos > 5) {
+      setError("Maximum 5 photos allowed for video");
+      return;
+    }
+
+    setUploadedPhotos(prev => [...prev, ...validFiles]);
+    setError("");
+  };
+
+  const removePhoto = (index: number) => {
+    setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const togglePlayback = () => {
@@ -1290,10 +1343,59 @@ export default function App() {
                       🎬 Create Gift Video
                     </h4>
                     <p className="text-[10px] sm:text-xs text-[#FAF9F6]/80 leading-relaxed font-sans">
-                      Transform your song into a stunning shareable video with animated lyrics and visuals.
+                      Transform your song into a stunning shareable video with animated lyrics and your photos.
                     </p>
                     
                     <div className="space-y-3">
+                      {/* Photo Upload Section */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                          Upload Photos (3-5 images, max 5MB each):
+                        </label>
+                        
+                        {uploadedPhotos.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2">
+                            {uploadedPhotos.map((photo, idx) => (
+                              <div key={idx} className="relative group">
+                                <img 
+                                  src={URL.createObjectURL(photo)} 
+                                  alt={`Upload ${idx + 1}`}
+                                  className="w-full h-20 object-cover rounded-lg border border-[#FFD700]/30"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removePhoto(idx)}
+                                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {uploadedPhotos.length < 5 && (
+                          <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-[#FFD700]/30 rounded-lg cursor-pointer hover:border-[#FFD700]/60 transition-all bg-black/40">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                            <span className="text-xs text-[#FFD700]/70 font-mono">
+                              📸 Click to Upload Photos ({uploadedPhotos.length}/5)
+                            </span>
+                          </label>
+                        )}
+                        
+                        {uploadedPhotos.length > 0 && (
+                          <p className="text-[9px] text-emerald-400 font-mono">
+                            ✓ {uploadedPhotos.length} photo{uploadedPhotos.length > 1 ? 's' : ''} ready for video
+                          </p>
+                        )}
+                      </div>
+
                       <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
                         Video Length:
                       </label>
@@ -1326,17 +1428,11 @@ export default function App() {
                       
                       <button
                         type="button"
-                        onClick={() => {
-                          if (!currentSong) {
-                            setError("Generate a song first before creating a video!");
-                            return;
-                          }
-                          alert(`Creating ${videoLength}sec video with "${currentSong.title}"...`);
-                        }}
-                        disabled={!currentSong || isGenerating || isGeneratingVideo}
+                        onClick={handleGenerateVideo}
+                        disabled={!currentSong || isGenerating || isGeneratingVideo || uploadedPhotos.length < 3}
                         className="w-full px-4 py-3 bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white font-bold text-xs rounded-lg border border-[#FFD700]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
                       >
-                        {isGeneratingVideo ? "Rendering..." : "🎥 Generate Video Clip"}
+                        {isGeneratingVideo ? "Rendering..." : uploadedPhotos.length < 3 ? "Upload 3+ Photos First" : "🎥 Generate Video Clip"}
                       </button>
                     </div>
                   </div>

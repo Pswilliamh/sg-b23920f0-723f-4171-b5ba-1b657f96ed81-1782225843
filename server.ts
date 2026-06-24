@@ -8,6 +8,7 @@ import fs from "fs";
 import https from "https";
 import { promisify } from "util";
 import { GoogleGenAI } from "@google/genai";
+import multer from "multer";
 
 dotenv.config({ path: ".env.local" });
 
@@ -484,7 +485,7 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
 // Video generation endpoint
 app.post("/api/generate-video", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { audioUrl, lyrics, title, videoLength, photos } = req.body;
+    const { audioUrl, lyrics, title, videoLength, photoPaths } = req.body;
 
     if (!audioUrl || !lyrics || !title) {
       res.status(400).json({ success: false, error: "Missing required fields: audioUrl, lyrics, title" });
@@ -525,57 +526,62 @@ app.post("/api/generate-video", async (req: Request, res: Response): Promise<voi
     });
 
     // Create video with FFmpeg
-    console.log("Generating video with FFmpeg...");
+    console.log("Generating video with photos and text overlays...");
     await new Promise<void>((resolve, reject) => {
-      const command = ffmpeg()
-        .input(audioPath)
-        .inputOptions([`-t ${videoDuration}`])
-        .videoCodec("libx264")
+      const command = ffmpeg();
+
+      // Add photos as input if provided
+      if (photoPaths && photoPaths.length > 0) {
+        const photoFiles = photoPaths.map((p: string) => path.join(__dirname, "public", p.replace(/^\//, '')));
+        
+        // Calculate duration per photo
+        const durationPerPhoto = videoDuration / photoFiles.length;
+        
+        // Create filter for photo slideshow with crossfade
+        const filters: string[] = [];
+        photoFiles.forEach((photoPath, idx) => {
+          command.input(photoPath).loop(durationPerPhoto);
+          if (idx === 0) {
+            filters.push(`[${idx+1}:v]scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,setpts=PTS-STARTPTS[v${idx}]`);
+          } else {
+            filters.push(`[${idx+1}:v]scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,setpts=PTS-STARTPTS+${idx*durationPerPhoto}/TB[v${idx}]`);
+          }
+        });
+        
+        // Concatenate photos
+        const concatFilter = photoFiles.map((_, idx) => `[v${idx}]`).join('') + `concat=n=${photoFiles.length}:v=1:a=0[vout]`;
+        filters.push(concatFilter);
+        
+        command.complexFilter(filters);
+        command.map('[vout]');
+      } else {
+        // No photos - use solid color background
+        command.input('color=c=#1c1917:s=1280x720:d=' + videoDuration).inputFormat('lavfi');
+      }
+
+      // Add audio
+      command.input(audioPath);
+      command.outputOptions(['-map', '1:a']);
+
+      // Add text overlays
+      const lyricsText = lyrics.split("\n").slice(0, 4).join("\\n").replace(/'/g, "'\\''");
+      const titleText = title.replace(/'/g, "'\\''");
+      
+      command.videoCodec("libx264")
         .audioCodec("aac")
         .size("1280x720")
         .fps(30)
         .outputOptions([
           "-pix_fmt yuv420p",
           "-preset fast",
-          "-crf 23"
+          "-crf 23",
+          `-vf drawtext=text='${titleText}':fontsize=48:fontcolor=white@0.9:x=(w-text_w)/2:y=50:shadowcolor=black:shadowx=3:shadowy=3,drawtext=text='${lyricsText}':fontsize=32:fontcolor=white@0.8:x=(w-text_w)/2:y=(h-text_h)/2:shadowcolor=black:shadowx=2:shadowy=2`
         ]);
-
-      // Add text overlay with lyrics
-      const lyricsText = lyrics.split("\n").slice(0, 4).join("\n").replace(/'/g, "\\\\'");
-      command.complexFilter([
-        {
-          filter: "drawtext",
-          options: {
-            text: lyricsText,
-            fontsize: 36,
-            fontcolor: "white",
-            x: "(w-text_w)/2",
-            y: "(h-text_h)/2",
-            shadowcolor: "black",
-            shadowx: 2,
-            shadowy: 2
-          }
-        },
-        {
-          filter: "drawtext",
-          options: {
-            text: title.replace(/'/g, "\\\\'"),
-            fontsize: 48,
-            fontcolor: "#FFD700",
-            x: "(w-text_w)/2",
-            y: "50",
-            shadowcolor: "black",
-            shadowx: 3,
-            shadowy: 3,
-            fontfile: "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-          }
-        }
-      ]);
 
       command
         .output(outputPath)
         .on("end", () => {
-          console.log("Video generation completed!");
+          console.log("Video generation completed with photos!");
           // Cleanup temp audio file
           if (fs.existsSync(audioPath)) {
             fs.unlinkSync(audioPath);
@@ -600,7 +606,7 @@ app.post("/api/generate-video", async (req: Request, res: Response): Promise<voi
     res.json({
       success: true,
       videoUrl,
-      message: "Video generated successfully"
+      message: "Video generated successfully with photos"
     });
 
   } catch (error: unknown) {
@@ -609,6 +615,60 @@ app.post("/api/generate-video", async (req: Request, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       error: err.message || "Video generation failed"
+    });
+  }
+});
+
+// Configure multer for photo uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5 // Max 5 files
+  },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only image files are allowed'));
+      return;
+    }
+    cb(null, true);
+  }
+});
+
+// Photo upload endpoint
+app.post("/api/upload-photos", upload.array('photos', 5), (req: Request, res: Response) => {
+  try {
+    if (!req.files || !Array.isArray(req.files)) {
+      return res.status(400).json({ success: false, error: "No photos uploaded" });
+    }
+
+    const photoPaths = req.files.map(file => `/uploads/${file.filename}`);
+    
+    res.json({
+      success: true,
+      photoPaths,
+      message: `${photoPaths.length} photo(s) uploaded successfully`
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Photo upload error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Photo upload failed"
     });
   }
 });
