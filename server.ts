@@ -419,8 +419,8 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       console.log("[Suno Bridge] Prompt:", prompt.substring(0, 100));
       console.log("[Suno Bridge] Tags:", cleanTags);
       
-      // FIXED: Correct 302.AI Suno endpoint (NO /v1/ prefix!)
-      const response = await fetch("https://api.302.ai/suno/submit/music", {
+      // Step 1: Submit music generation job
+      const submitResponse = await fetch("https://api.302.ai/suno/submit/music", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -433,45 +433,87 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
         })
       });
 
-      const responseText = await response.text();
-      console.log("[Suno Bridge] Response status:", response.status);
-      console.log("[Suno Bridge] Response body:", responseText.substring(0, 500));
+      const submitText = await submitResponse.text();
+      console.log("[Suno Bridge] Submit response status:", submitResponse.status);
+      console.log("[Suno Bridge] Submit response body:", submitText.substring(0, 500));
 
-      if (response.ok) {
-        const result = JSON.parse(responseText);
-        console.log("[Suno Bridge] ✓ Received response from 302.AI Suno API");
-        
-        // Try multiple response formats
-        let extractedUrls: string[] = [];
-        
-        // 302.AI Suno response format
-        if (result.data && Array.isArray(result.data)) {
-          extractedUrls = result.data.map((item: any) => item.audio_url || item.url).filter(Boolean);
-        }
-        // Direct array
-        else if (Array.isArray(result)) {
-          extractedUrls = result.map((song: any) => song.audio_url || song.url).filter(Boolean);
-        }
-        // audio_urls array
-        else if (result && Array.isArray(result.audio_urls)) {
-          extractedUrls = result.audio_urls;
-        }
-        // Single URL
-        else if (result && (result.audio_url || result.url)) {
-          extractedUrls = [result.audio_url || result.url];
-        }
-        
-        if (extractedUrls.length > 0) {
-          songUrls = extractedUrls;
-          console.log(`[Suno Bridge] ✓ Successfully extracted ${extractedUrls.length} audio URL(s):`, extractedUrls[0]);
-        } else {
-          console.warn("[Suno Bridge] ⚠️ No audio URLs found in response");
-          console.warn("[Suno Bridge] Response structure:", JSON.stringify(result, null, 2).substring(0, 500));
-        }
-      } else {
-        console.error(`[Suno Bridge] ❌ API Error ${response.status}: ${response.statusText}`);
-        console.error(`[Suno Bridge] Error body:`, responseText);
+      if (!submitResponse.ok) {
+        console.error(`[Suno Bridge] ❌ Submit failed ${submitResponse.status}: ${submitResponse.statusText}`);
+        console.error(`[Suno Bridge] Error body:`, submitText);
         console.warn("[Suno Bridge] Using fallback audio URL");
+      } else {
+        const submitResult = JSON.parse(submitText);
+        
+        // Extract job ID from response
+        const jobId = submitResult.data || submitResult.id || submitResult.task_id;
+        
+        if (!jobId) {
+          console.warn("[Suno Bridge] ⚠️ No job ID found in submit response");
+          console.warn("[Suno Bridge] Response:", submitText);
+        } else {
+          console.log(`[Suno Bridge] ✓ Job submitted successfully. Job ID: ${jobId}`);
+          console.log("[Suno Bridge] Polling for completion...");
+          
+          // Step 2: Poll job status until completion (max 60 seconds)
+          let attempts = 0;
+          const maxAttempts = 30; // 30 attempts x 2 seconds = 60 seconds max
+          let audioUrl = null;
+          
+          while (attempts < maxAttempts && !audioUrl) {
+            attempts++;
+            
+            // Wait 2 seconds between polls
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Fetch job status
+            const statusResponse = await fetch(`https://api.302.ai/suno/fetch/${jobId}`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${sunoApiKey}`
+              }
+            });
+            
+            const statusText = await statusResponse.text();
+            console.log(`[Suno Bridge] Poll attempt ${attempts}/${maxAttempts} - Status: ${statusResponse.status}`);
+            
+            if (statusResponse.ok) {
+              const statusResult = JSON.parse(statusText);
+              console.log("[Suno Bridge] Status response:", JSON.stringify(statusResult, null, 2).substring(0, 300));
+              
+              // Check if job is complete
+              if (statusResult.status === "complete" || statusResult.status === "success") {
+                // Extract audio URL from various possible response formats
+                if (statusResult.audio_url) {
+                  audioUrl = statusResult.audio_url;
+                } else if (statusResult.data && statusResult.data.audio_url) {
+                  audioUrl = statusResult.data.audio_url;
+                } else if (Array.isArray(statusResult.data)) {
+                  audioUrl = statusResult.data[0]?.audio_url;
+                } else if (statusResult.url) {
+                  audioUrl = statusResult.url;
+                }
+                
+                if (audioUrl) {
+                  console.log(`[Suno Bridge] ✓ Audio URL extracted: ${audioUrl}`);
+                  songUrls = [audioUrl];
+                  break;
+                }
+              } else if (statusResult.status === "failed" || statusResult.status === "error") {
+                console.error("[Suno Bridge] ❌ Job failed:", statusResult);
+                break;
+              } else {
+                console.log(`[Suno Bridge] Job status: ${statusResult.status || "processing"}`);
+              }
+            } else {
+              console.warn(`[Suno Bridge] ⚠️ Status check failed: ${statusResponse.status}`);
+            }
+          }
+          
+          if (!audioUrl) {
+            console.warn("[Suno Bridge] ⚠️ Audio generation timed out or failed");
+            console.warn("[Suno Bridge] Using fallback audio URL");
+          }
+        }
       }
     } else {
       console.log("[Suno Bridge] → No valid API key. Using fallback audio URL");
