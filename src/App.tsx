@@ -1620,88 +1620,142 @@ export default function App() {
                     </div>
 
                     {/* [3. CHOOSE YOUR GIFT PACKAGE] */}
-                    <div className="space-y-4 bg-gradient-to-br from-[#1c1917]/80 to-[#251e19]/60 border border-[#FFD700]/30 rounded-xl p-5 shadow-xl">
-                      <label className="text-sm md:text-base font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-bold">
-                        <Clock size={18} /> Choose Your Gift Package:
-                      </label>
-                      <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-5 bg-gradient-to-br from-[#1c1917]/90 to-[#251e19]/70 border-2 border-[#FFD700]/40 rounded-2xl p-6 shadow-2xl">
+                      <div className="text-center space-y-2">
+                        <label className="text-base md:text-lg font-mono text-[#FFD700] uppercase tracking-widest flex items-center justify-center gap-2.5 font-extrabold">
+                          <Clock size={20} /> Choose Your Gift Package
+                        </label>
+                        <p className="text-[10px] text-white/60 font-sans italic">Select the perfect package for your special dedication</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
                         <button
                           type="button"
                           onClick={() => setSetType("quick")}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
                             setSetType === "quick"
-                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                              ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">⚡</div>
-                            <div className="text-xs font-bold text-[#FFD700]">QUICK STRUM</div>
+                          <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
+                              ⚡
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Quick Strum</h4>
+                                <span className="text-lg font-bold text-[#FFD700]">$0.99</span>
+                              </div>
+                              <p className="text-xs text-white/70 leading-relaxed font-sans">
+                                Perfect for trying out our service. Get a beautiful custom song in under 60 seconds.
+                              </p>
+                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
+                                <li className="flex items-center gap-1.5">✓ Single custom song</li>
+                                <li className="flex items-center gap-1.5">✓ ~60 second generation</li>
+                                <li className="flex items-center gap-1.5">✓ Instant email delivery</li>
+                              </ul>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-white/60 leading-relaxed">
-                            Single song • ~60 seconds • Instant delivery
-                          </div>
-                          <div className="text-xs font-bold text-[#FFD700] mt-2">$0.99</div>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setSetType("extended")}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
                             setSetType === "extended"
-                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                              ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">🎵</div>
-                            <div className="text-xs font-bold text-[#FFD700]">FULL SET</div>
+                          <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
+                              🎵
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Full Set</h4>
+                                <span className="text-lg font-bold text-[#FFD700]">$1.99</span>
+                              </div>
+                              <p className="text-xs text-white/70 leading-relaxed font-sans">
+                                Get 3 unique variations to find your perfect sound. Professional quality with full lyrics.
+                              </p>
+                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
+                                <li className="flex items-center gap-1.5">✓ 3 song variations</li>
+                                <li className="flex items-center gap-1.5">✓ Full lyric sheets included</li>
+                                <li className="flex items-center gap-1.5">✓ Premium audio quality</li>
+                                <li className="flex items-center gap-1.5">✓ Multiple style options</li>
+                              </ul>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-white/60 leading-relaxed">
-                            3 song variations • Full lyrics • Premium quality
-                          </div>
-                          <div className="text-xs font-bold text-[#FFD700] mt-2">$1.99</div>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setSetType("premium")}
-                          className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                          className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
                             setSetType === "premium"
-                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                              ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="absolute -top-2 -right-2 bg-[#FFD700] text-black text-[8px] font-bold px-2 py-0.5 rounded-full">
-                            BEST
+                          <div className="absolute -top-3 -right-3 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-black text-[9px] font-bold px-3 py-1 rounded-full shadow-lg border border-white/20">
+                            ⭐ MOST POPULAR
                           </div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">🎥</div>
-                            <div className="text-xs font-bold text-[#FFD700]">PREMIUM VIDEO</div>
+                          <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
+                              🎥
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Premium Video</h4>
+                                <span className="text-lg font-bold text-[#FFD700]">$4.99</span>
+                              </div>
+                              <p className="text-xs text-white/70 leading-relaxed font-sans">
+                                The ultimate gift! 5 songs plus an HD video with your photos and animated lyrics.
+                              </p>
+                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
+                                <li className="flex items-center gap-1.5">✓ 5 custom song variations</li>
+                                <li className="flex items-center gap-1.5">✓ HD video with your photos</li>
+                                <li className="flex items-center gap-1.5">✓ Animated lyric display</li>
+                                <li className="flex items-center gap-1.5">✓ Upload up to 5 photos</li>
+                                <li className="flex items-center gap-1.5">✓ Full review & revision rights</li>
+                              </ul>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-white/60 leading-relaxed">
-                            5 songs + HD video • Full review rights
-                          </div>
-                          <div className="text-xs font-bold text-[#FFD700] mt-2">$4.99</div>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setSetType("legacy")}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
                             setSetType === "legacy"
-                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                              ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">👑</div>
-                            <div className="text-xs font-bold text-[#FFD700]">LEGACY BUNDLE</div>
+                          <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
+                              👑
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Legacy Bundle</h4>
+                                <span className="text-lg font-bold text-[#FFD700]">$12.99</span>
+                              </div>
+                              <p className="text-xs text-white/70 leading-relaxed font-sans">
+                                Create a lasting musical legacy. Unlimited songs, premium videos, and shareable gift cards.
+                              </p>
+                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
+                                <li className="flex items-center gap-1.5">✓ Unlimited custom songs</li>
+                                <li className="flex items-center gap-1.5">✓ Premium HD video production</li>
+                                <li className="flex items-center gap-1.5">✓ Printable gift cards included</li>
+                                <li className="flex items-center gap-1.5">✓ Priority support & revisions</li>
+                                <li className="flex items-center gap-1.5">✓ Lifetime access to all songs</li>
+                                <li className="flex items-center gap-1.5">✓ Commercial usage rights</li>
+                              </ul>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-white/60 leading-relaxed">
-                            Unlimited songs • Premium video • Gift cards
-                          </div>
-                          <div className="text-xs font-bold text-[#FFD700] mt-2">$12.99</div>
                         </button>
                       </div>
                     </div>
