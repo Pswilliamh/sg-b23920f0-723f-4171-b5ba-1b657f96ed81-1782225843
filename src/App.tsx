@@ -1279,48 +1279,114 @@ export default function App() {
                     <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
                       <Sliders size={16} /> Select Your Musical Style Theme:
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Acoustic Folk")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Acoustic Folk" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Acoustic Folk" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Acoustic Folk
+                        <div className="text-lg mb-1">🎸</div>
+                        <div className="text-xs font-bold">Acoustic Folk</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Warm & Traditional</div>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Bluegrass")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Bluegrass" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Bluegrass" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Bluegrass
+                        <div className="text-lg mb-1">🪕</div>
+                        <div className="text-xs font-bold">Bluegrass</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Fast & Energetic</div>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Rustic Lute")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Rustic Lute" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Rustic Lute" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Rustic Lute
+                        <div className="text-lg mb-1">🎻</div>
+                        <div className="text-xs font-bold">Rustic Lute</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Medieval & Earthy</div>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Modern Worship")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Modern Worship" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Modern Worship" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Worship
+                        <div className="text-lg mb-1">🙏</div>
+                        <div className="text-xs font-bold">Modern Worship</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Spiritual & Uplifting</div>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Lofi Acoustic")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Lofi Acoustic" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Lofi Acoustic" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Lofi Acoustic
+                        <div className="text-lg mb-1">🎧</div>
+                        <div className="text-xs font-bold">Lofi Acoustic</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Chill & Relaxed</div>
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setCustomGenre("Indie Pop")} 
-                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Indie Pop" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Indie Pop" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
                       >
-                        Indie Pop
+                        <div className="text-lg mb-1">✨</div>
+                        <div className="text-xs font-bold">Indie Pop</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Modern & Catchy</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Classical Guitar")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Classical Guitar" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">🎼</div>
+                        <div className="text-xs font-bold">Classical Guitar</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Elegant & Refined</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Country Ballad")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Country Ballad" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">🤠</div>
+                        <div className="text-xs font-bold">Country Ballad</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Heartfelt & Storytelling</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Celtic Folk")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Celtic Folk" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">🍀</div>
+                        <div className="text-xs font-bold">Celtic Folk</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Irish & Mystical</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Jazz Acoustic")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Jazz Acoustic" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">🎺</div>
+                        <div className="text-xs font-bold">Jazz Acoustic</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Smooth & Sophisticated</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Gospel Hymn")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Gospel Hymn" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">⛪</div>
+                        <div className="text-xs font-bold">Gospel Hymn</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Soulful & Powerful</div>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Singer-Songwriter")} 
+                        className={`p-3 rounded-xl border text-left transition-all ${customGenre === "Singer-Songwriter" ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-[#FFD700]/50"}`}
+                      >
+                        <div className="text-lg mb-1">🎤</div>
+                        <div className="text-xs font-bold">Singer-Songwriter</div>
+                        <div className="text-[9px] opacity-75 mt-0.5">Intimate & Personal</div>
                       </button>
                     </div>
                   </div>
