@@ -20,6 +20,9 @@ export default function App() {
   const [context, setContext] = useState("");
   const [voiceStyle, setVoiceStyle] = useState<string>("male_warm");
   const [videoLength, setVideoLength] = useState<number>(10);
+  const [customGenre, setCustomGenre] = useState("Acoustic Folk");
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string>("");
   const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
@@ -30,7 +33,6 @@ export default function App() {
   const [sunoStatus, setSunoStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
   const [sunoMessage, setSunoMessage] = useState("");
   const [setType, setSetType] = useState<SetType>("quick");
-  const [customGenre, setCustomGenre] = useState("Acoustic Folk");
   const [gifterEmail, setGifterEmail] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -654,7 +656,7 @@ export default function App() {
     }
   };
 
-  const handleStrumSong = async (e?: React.FormEvent) => {
+  const handleStrumSong = async () => {
     if (e) e.preventDefault();
     
     const valEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -783,6 +785,45 @@ export default function App() {
       setIsGenerating(false);
       setIsRendering(false);
       setTimeout(() => setGenerationProgress(0), 2000);
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!currentSong || !audioUrl) {
+      setError("Generate a song first before creating a video!");
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audioUrl: audioUrl,
+          lyrics: currentSong.lyrics,
+          title: currentSong.title,
+          videoLength: videoLength,
+          photos: [] // User photo upload can be added later
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || "Video generation failed");
+      }
+
+      setGeneratedVideoUrl(data.videoUrl);
+      alert("🎉 Video generated successfully! Check the preview player.");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || "Video generation failed. Please try again.");
+      console.error("Video generation error:", error);
+    } finally {
+      setIsGeneratingVideo(false);
     }
   };
 
@@ -1266,10 +1307,10 @@ export default function App() {
                           }
                           alert(`Creating ${videoLength}sec video with "${currentSong.title}"...`);
                         }}
-                        disabled={!currentSong || isGenerating}
+                        disabled={!currentSong || isGenerating || isGeneratingVideo}
                         className="w-full px-4 py-3 bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white font-bold text-xs rounded-lg border border-[#FFD700]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
                       >
-                        🎥 Generate Video Clip
+                        {isGeneratingVideo ? "Rendering..." : "🎥 Generate Video Clip"}
                       </button>
                     </div>
                   </div>
@@ -1280,7 +1321,7 @@ export default function App() {
                       <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
                         📺 Video Preview
                       </h4>
-                      {currentSong && (
+                      {generatedVideoUrl && (
                         <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest flex items-center gap-1">
                           <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
                           Ready
@@ -1288,26 +1329,73 @@ export default function App() {
                       )}
                     </div>
                     
-                    {currentSong ? (
+                    {generatedVideoUrl ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/30 shadow-lg bg-black">
+                          <video 
+                            src={generatedVideoUrl} 
+                            controls 
+                            className="w-full aspect-video"
+                            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='720'%3E%3Crect fill='%231c1917' width='1280' height='720'/%3E%3C/svg%3E"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                        
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[9px] font-mono text-white/50">
+                            <div>Duration: {videoLength} seconds</div>
+                            <div>Format: MP4 • HD Quality</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const a = document.createElement("a");
+                              a.href = generatedVideoUrl;
+                              a.download = `${currentSong?.title || "song"}_video.mp4`;
+                              a.click();
+                            }}
+                            className="px-3 py-1.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded transition-all"
+                          >
+                            ⬇️ Download
+                          </button>
+                        </div>
+                      </div>
+                    ) : currentSong ? (
                       <div className="space-y-3">
                         <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/30 shadow-lg bg-black aspect-video">
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-3">
-                            <div className="w-16 h-16 rounded-full bg-[#FFD700]/10 flex items-center justify-center border border-[#FFD700]/30">
-                              <Play size={28} className="text-[#FFD700] ml-1" />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-xs font-bold text-[#FFD700]">Video Ready to Generate</p>
-                              <p className="text-[10px] text-white/60 font-sans">
-                                "{currentSong.title}"
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => alert('Video rendering feature coming soon! FFmpeg integration in progress.')}
-                              className="px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-xs font-bold rounded-lg transition-all"
-                            >
-                              🎬 Render Video Now
-                            </button>
+                            {isGeneratingVideo ? (
+                              <>
+                                <div className="w-16 h-16 rounded-full border-4 border-[#FFD700]/20 border-t-[#FFD700] animate-spin" />
+                                <div className="space-y-1">
+                                  <p className="text-xs font-bold text-[#FFD700]">Rendering Video...</p>
+                                  <p className="text-[10px] text-white/60 font-sans">
+                                    This may take 30-60 seconds
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-16 h-16 rounded-full bg-[#FFD700]/10 flex items-center justify-center border border-[#FFD700]/30">
+                                  <Play size={28} className="text-[#FFD700] ml-1" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-bold text-[#FFD700]">Video Ready to Generate</p>
+                                  <p className="text-[10px] text-white/60 font-sans">
+                                    "{currentSong.title}"
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleGenerateVideo}
+                                  disabled={isGeneratingVideo}
+                                  className="px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  🎬 Render Video Now
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                         

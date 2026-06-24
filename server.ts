@@ -1,10 +1,18 @@
-import express from "express";
-import path from "path";
+import express, { Request, Response } from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { GoogleGenAI, Type } from "@google/genai";
 import Stripe from "stripe";
+import ffmpeg from "fluent-ffmpeg";
+import fs from "fs";
+import https from "https";
+import { promisify } from "util";
 
-dotenv.config();
+dotenv.config({ path: ".env.local" });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const app = express();
 
 // Ensure the Stripe key is loaded lazily to preserve startup reliability
 let stripeClient: Stripe | null = null;
@@ -43,7 +51,6 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
-const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 // Port is hardcoded to 3000 by the environment constraints
@@ -458,6 +465,138 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
     audio_urls: songUrls,
     note: sunoApiKey ? undefined : "Add VITE_SUNO_API_KEY to .env.local for live Suno generation"
   });
+});
+
+// Video generation endpoint
+app.post("/api/generate-video", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { audioUrl, lyrics, title, videoLength, photos } = req.body;
+
+    if (!audioUrl || !lyrics || !title) {
+      res.status(400).json({ success: false, error: "Missing required fields: audioUrl, lyrics, title" });
+      return;
+    }
+
+    const videoDuration = videoLength || 10;
+    const videoId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const outputPath = path.join(__dirname, "public", "generated", `${videoId}.mp4`);
+    const tempDir = path.join(__dirname, "temp");
+    const audioPath = path.join(tempDir, `${videoId}_audio.mp3`);
+
+    // Create temp directory if it doesn't exist
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Create public/generated directory if it doesn't exist
+    const generatedDir = path.join(__dirname, "public", "generated");
+    if (!fs.existsSync(generatedDir)) {
+      fs.mkdirSync(generatedDir, { recursive: true });
+    }
+
+    // Download audio file
+    console.log(`Downloading audio from: ${audioUrl}`);
+    await new Promise<void>((resolve, reject) => {
+      const file = fs.createWriteStream(audioPath);
+      https.get(audioUrl, (response) => {
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close();
+          resolve();
+        });
+      }).on("error", (err) => {
+        fs.unlinkSync(audioPath);
+        reject(err);
+      });
+    });
+
+    // Create video with FFmpeg
+    console.log("Generating video with FFmpeg...");
+    await new Promise<void>((resolve, reject) => {
+      const command = ffmpeg()
+        .input(audioPath)
+        .inputOptions([`-t ${videoDuration}`])
+        .videoCodec("libx264")
+        .audioCodec("aac")
+        .size("1280x720")
+        .fps(30)
+        .outputOptions([
+          "-pix_fmt yuv420p",
+          "-preset fast",
+          "-crf 23"
+        ]);
+
+      // Add text overlay with lyrics
+      const lyricsText = lyrics.split("\n").slice(0, 4).join("\n").replace(/'/g, "\\\\'");
+      command.complexFilter([
+        {
+          filter: "drawtext",
+          options: {
+            text: lyricsText,
+            fontsize: 36,
+            fontcolor: "white",
+            x: "(w-text_w)/2",
+            y: "(h-text_h)/2",
+            shadowcolor: "black",
+            shadowx: 2,
+            shadowy: 2
+          }
+        },
+        {
+          filter: "drawtext",
+          options: {
+            text: title.replace(/'/g, "\\\\'"),
+            fontsize: 48,
+            fontcolor: "#FFD700",
+            x: "(w-text_w)/2",
+            y: "50",
+            shadowcolor: "black",
+            shadowx: 3,
+            shadowy: 3,
+            fontfile: "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+          }
+        }
+      ]);
+
+      command
+        .output(outputPath)
+        .on("end", () => {
+          console.log("Video generation completed!");
+          // Cleanup temp audio file
+          if (fs.existsSync(audioPath)) {
+            fs.unlinkSync(audioPath);
+          }
+          resolve();
+        })
+        .on("error", (err) => {
+          console.error("FFmpeg error:", err);
+          // Cleanup on error
+          if (fs.existsSync(audioPath)) {
+            fs.unlinkSync(audioPath);
+          }
+          if (fs.existsSync(outputPath)) {
+            fs.unlinkSync(outputPath);
+          }
+          reject(err);
+        })
+        .run();
+    });
+
+    const videoUrl = `/generated/${videoId}.mp4`;
+    res.json({
+      success: true,
+      videoUrl,
+      message: "Video generated successfully"
+    });
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Video generation error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Video generation failed"
+    });
+  }
 });
 
 // 2. Avatar Speech Generation endpoint via gemini-3.1-flash-tts-preview
