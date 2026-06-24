@@ -387,11 +387,11 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
     return res.status(400).json({ error: "Story prompt is required for Suno generation." });
   }
 
-  // FIX: Use VITE_SUNO_API_KEY to match client-side environment variable
-  const sunoApiKey = process.env.VITE_SUNO_API_KEY || process.env.SUNO_API_KEY || "";
+  // FIX: Use SUNO_API_KEY (server-side) not VITE_SUNO_API_KEY (client-side only)
+  const sunoApiKey = process.env.SUNO_API_KEY || "";
   
   if (!sunoApiKey || sunoApiKey.length < 10) {
-    console.warn("⚠️ SUNO API KEY MISSING: Add VITE_SUNO_API_KEY=sk-... to your .env.local file");
+    console.warn("⚠️ SUNO API KEY MISSING: Add SUNO_API_KEY=sk-... to your .env.local file");
     console.warn("   Get your key from: https://302.ai or your Suno provider");
     console.warn("   Using high-fidelity fallback audio URLs for now...");
   }
@@ -431,25 +431,38 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
 
       if (response.ok) {
         const result = await response.json() as any;
-        console.log("[Suno Bridge] ✓ Received response from Suno API");
+        console.log("[Suno Bridge] ✓ Received response from Suno API:", JSON.stringify(result, null, 2));
         
+        // Try multiple response formats
+        let extractedUrls: string[] = [];
+        
+        // Format 1: Direct array of song objects
         if (Array.isArray(result)) {
-          const urls = result.map((song: any) => song.audio_url || song.url).filter(Boolean);
-          if (urls.length > 0) {
-            songUrls = urls;
-            console.log(`[Suno Bridge] ✓ Successfully extracted ${urls.length} audio URL(s)`);
-          }
-        } else if (result && result.audio_urls) {
-          songUrls = result.audio_urls;
-        } else if (result && result.data && Array.isArray(result.data)) {
-          const urls = result.data.map((song: any) => song.audio_url || song.url).filter(Boolean);
-          if (urls.length > 0) {
-            songUrls = urls;
-            console.log(`[Suno Bridge] ✓ Successfully extracted ${urls.length} audio URL(s) from data array`);
-          }
+          extractedUrls = result.map((song: any) => song.audio_url || song.url).filter(Boolean);
+        }
+        // Format 2: result.audio_urls array
+        else if (result && Array.isArray(result.audio_urls)) {
+          extractedUrls = result.audio_urls;
+        }
+        // Format 3: result.data array
+        else if (result && result.data && Array.isArray(result.data)) {
+          extractedUrls = result.data.map((song: any) => song.audio_url || song.url).filter(Boolean);
+        }
+        // Format 4: Single audio_url or url field
+        else if (result && (result.audio_url || result.url)) {
+          extractedUrls = [result.audio_url || result.url];
+        }
+        
+        if (extractedUrls.length > 0) {
+          songUrls = extractedUrls;
+          console.log(`[Suno Bridge] ✓ Successfully extracted ${extractedUrls.length} audio URL(s):`, extractedUrls[0]);
+        } else {
+          console.warn("[Suno Bridge] ⚠️ No audio URLs found in response. Response structure:", Object.keys(result));
         }
       } else {
+        const errorText = await response.text();
         console.warn(`[Suno Bridge] ⚠️ API returned status ${response.status}: ${response.statusText}`);
+        console.warn(`[Suno Bridge]    Error details: ${errorText.substring(0, 200)}`);
         console.warn("[Suno Bridge]    Using fallback audio URL instead");
       }
     } else {
@@ -463,7 +476,7 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
   return res.json({
     success: true,
     audio_urls: songUrls,
-    note: sunoApiKey ? undefined : "Add VITE_SUNO_API_KEY to .env.local for live Suno generation"
+    note: sunoApiKey ? undefined : "Add SUNO_API_KEY (not VITE_SUNO_API_KEY) to .env.local for live Suno generation"
   });
 });
 
