@@ -442,7 +442,22 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
         console.error(`[Suno Bridge] Error body:`, submitText);
         console.warn("[Suno Bridge] Using fallback audio URL");
       } else {
-        const submitResult = JSON.parse(submitText);
+        // Check if response is valid JSON
+        let submitResult;
+        try {
+          submitResult = JSON.parse(submitText);
+        } catch (parseErr) {
+          console.error("[Suno Bridge] ❌ Submit response is not valid JSON");
+          console.error("[Suno Bridge] Response was HTML/text. First 300 chars:", submitText.substring(0, 300));
+          console.error("[Suno Bridge] This usually means the API endpoint is wrong or your API key is invalid");
+          console.warn("[Suno Bridge] Using fallback audio URL");
+          // Return early with fallback
+          return res.json({
+            success: true,
+            audio_urls: songUrls,
+            note: "302.AI Suno API returned HTML instead of JSON - check API key and endpoint"
+          });
+        }
         
         // Extract job ID from response
         const jobId = submitResult.data || submitResult.id || submitResult.task_id;
@@ -477,7 +492,18 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
             console.log(`[Suno Bridge] Poll attempt ${attempts}/${maxAttempts} - Status: ${statusResponse.status}`);
             
             if (statusResponse.ok) {
-              const statusResult = JSON.parse(statusText);
+              // Check if response is actually JSON before parsing
+              let statusResult;
+              try {
+                statusResult = JSON.parse(statusText);
+              } catch (parseErr) {
+                console.error(`[Suno Bridge] ⚠️ Invalid JSON response on poll ${attempts}`);
+                console.error(`[Suno Bridge] Response was HTML/text, not JSON. First 200 chars:`, statusText.substring(0, 200));
+                // If we get HTML, the API might be down or returning an error page
+                // Continue polling in case it's temporary
+                continue;
+              }
+              
               console.log("[Suno Bridge] Status response:", JSON.stringify(statusResult, null, 2).substring(0, 300));
               
               // Check if job is complete
