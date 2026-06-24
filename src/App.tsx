@@ -1619,52 +1619,90 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* [3. THE RUNTIME FREQUENCY SET] */}
-                    <div className="space-y-2">
-                      <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
-                        <Clock size={16} /> Select Your Dedicated Set Option:
+                    {/* [3. CHOOSE YOUR GIFT PACKAGE] */}
+                    <div className="space-y-4 bg-gradient-to-br from-[#1c1917]/80 to-[#251e19]/60 border border-[#FFD700]/30 rounded-xl p-5 shadow-xl">
+                      <label className="text-sm md:text-base font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-bold">
+                        <Clock size={18} /> Choose Your Gift Package:
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Quick Strum */}
-                        <div
-                          id="set_type_quick"
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
                           onClick={() => setSetType("quick")}
-                          className={`p-2 rounded-xl border cursor-pointer flex flex-col justify-between items-center text-center transition-all ${setType === "quick" ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]" : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"}`}
+                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                            setSetType === "quick"
+                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                          }`}
                         >
-                          <span className="text-[10px] font-bold text-[#FFD700]">⏱️ QUICK STRUM</span>
-                          <span className="text-[8px] text-white/50 font-mono">(60s • $0.99)</span>
-                        </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">⚡</div>
+                            <div className="text-xs font-bold text-[#FFD700]">QUICK STRUM</div>
+                          </div>
+                          <div className="text-[10px] text-white/60 leading-relaxed">
+                            Single song • ~60 seconds • Instant delivery
+                          </div>
+                          <div className="text-xs font-bold text-[#FFD700] mt-2">$0.99</div>
+                        </button>
 
-                        {/* Full Set */}
-                        <div
-                          id="set_type_full"
-                          onClick={() => setSetType("full")}
-                          className={`p-2 rounded-xl border cursor-pointer flex flex-col justify-between items-center text-center transition-all ${setType === "full" ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]" : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"}`}
+                        <button
+                          type="button"
+                          onClick={() => setSetType("extended")}
+                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                            setSetType === "extended"
+                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                          }`}
                         >
-                          <span className="text-[10px] font-bold text-[#FFD700]">📀 FULL SET</span>
-                          <span className="text-[8px] text-white/50 font-mono">(125s • $1.99)</span>
-                        </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">🎵</div>
+                            <div className="text-xs font-bold text-[#FFD700]">FULL SET</div>
+                          </div>
+                          <div className="text-[10px] text-white/60 leading-relaxed">
+                            3 song variations • Full lyrics • Premium quality
+                          </div>
+                          <div className="text-xs font-bold text-[#FFD700] mt-2">$1.99</div>
+                        </button>
 
-                        {/* Premium Video */}
-                        <div
-                          id="set_type_premium"
+                        <button
+                          type="button"
                           onClick={() => setSetType("premium")}
-                          className={`p-2 rounded-xl border cursor-pointer flex flex-col justify-between items-center text-center transition-all relative ${setType === "premium" ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.2)]" : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"}`}
+                          className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                            setSetType === "premium"
+                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                          }`}
                         >
-                          <span className="absolute -top-1.5 -right-1 bg-[#FFD700] text-black text-[6px] font-mono font-bold px-1 rounded uppercase tracking-wider scale-90">HOT</span>
-                          <span className="text-[10px] font-bold text-[#FFD700]">🚀 PREMIUM VIDEO</span>
-                          <span className="text-[8px] text-white/50 font-mono">(3-Songs • $4.99)</span>
-                        </div>
+                          <div className="absolute -top-2 -right-2 bg-[#FFD700] text-black text-[8px] font-bold px-2 py-0.5 rounded-full">
+                            BEST
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">🎥</div>
+                            <div className="text-xs font-bold text-[#FFD700]">PREMIUM VIDEO</div>
+                          </div>
+                          <div className="text-[10px] text-white/60 leading-relaxed">
+                            5 songs + HD video • Full review rights
+                          </div>
+                          <div className="text-xs font-bold text-[#FFD700] mt-2">$4.99</div>
+                        </button>
 
-                        {/* Legacy Bundle */}
-                        <div
-                          id="set_type_legacy"
+                        <button
+                          type="button"
                           onClick={() => setSetType("legacy")}
-                          className={`p-2 rounded-xl border cursor-pointer flex flex-col justify-between items-center text-center transition-all relative ${setType === "legacy" ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.2)]" : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"}`}
+                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                            setSetType === "legacy"
+                              ? "border-[#FFD700] bg-[#251e19]/80 shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+                              : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/50"
+                          }`}
                         >
-                          <span className="text-[10px] font-bold text-[#FFD700]">📦 LEGACY BUNDLE</span>
-                          <span className="text-[8px] text-white/50 font-mono">(Ultimate • $12.99)</span>
-                        </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-lg">👑</div>
+                            <div className="text-xs font-bold text-[#FFD700]">LEGACY BUNDLE</div>
+                          </div>
+                          <div className="text-[10px] text-white/60 leading-relaxed">
+                            Unlimited songs • Premium video • Gift cards
+                          </div>
+                          <div className="text-xs font-bold text-[#FFD700] mt-2">$12.99</div>
+                        </button>
                       </div>
                     </div>
 
