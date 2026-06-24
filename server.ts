@@ -7,6 +7,7 @@ import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import https from "https";
 import { promisify } from "util";
+import { GoogleGenAI, SchemaType as Type } from "@google/genai";
 
 dotenv.config({ path: ".env.local" });
 
