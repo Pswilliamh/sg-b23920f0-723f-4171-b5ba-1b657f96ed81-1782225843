@@ -657,8 +657,6 @@ export default function App() {
   };
 
   const handleStrumSong = async () => {
-    if (e) e.preventDefault();
-    
     const valEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!gifterEmail.trim()) {
       setError("Please specify Your Email (Gifter) - this is required so Haddi can deliver your digital keepsake!");
