@@ -704,6 +704,7 @@ export default function App() {
       const selectedVoice = voiceStyleOptions.find(v => v.id === voiceStyle);
       const voiceTags = selectedVoice ? selectedVoice.tags : "male vocalist, warm voice";
 
+      // Step 1: Generate song lyrics via Gemini
       const res = await fetch("/api/generate-song", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -723,7 +724,6 @@ export default function App() {
         throw new Error(data.error || "Minstrel song generation failed. Please try again.");
       }
 
-      setGenerationProgress(100);
       const returnedSong: SongData = data.song;
       setCurrentSong(returnedSong);
 
@@ -735,32 +735,60 @@ export default function App() {
         setActiveVariationIdx(0);
       }
 
-      // Extract real Suno audio URL from API response
-      let liveTrackUrl = data.audioUrl || data.audio_url || data.url || 
-                         (data.song && data.song.audioUrl) ||
-                         (data.data && data.data[0]?.audio_url) || 
-                         (Array.isArray(data) && data[0]?.audio_url);
+      // Step 2: Generate audio via Suno API
+      console.log("Calling Suno API to generate audio with vocals...");
+      const sunoPrompt = `${context.trim()}\n\nCreate a ${customGenre} song with ${voiceTags} vocals for ${target.trim()}.`;
+      
+      const sunoRes = await fetch("/api/generate-suno", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: sunoPrompt,
+          tags: `${customGenre}, ${voiceTags}, acoustic, folk, emotional, heartfelt`,
+          make_instrumental: false,
+          wait_audio_ready: true
+        })
+      });
 
-      // Fallback to mock only if no real URL is provided
+      const sunoData = await sunoRes.json();
+      console.log("Suno API response:", sunoData);
+
+      // Extract audio URL from Suno response
+      let liveTrackUrl = null;
+      if (sunoData.success && sunoData.audio_urls && sunoData.audio_urls.length > 0) {
+        liveTrackUrl = sunoData.audio_urls[0];
+        console.log("✓ Real Suno audio URL extracted:", liveTrackUrl);
+      }
+
+      // Fallback to genre-specific mock if Suno fails
       if (!liveTrackUrl) {
-        console.warn("No Suno audio URL in response, using mock fallback");
+        console.warn("No Suno audio URL - using fallback");
         const genreAudioUrls: Record<string, string> = {
           "Acoustic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           "Bluegrass": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
           "Rustic Lute": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
           "Modern Worship": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
           "Lofi Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-          "Indie Pop": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3"
+          "Indie Pop": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+          "Classical Guitar": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+          "Country Ballad": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+          "Celtic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+          "Jazz Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+          "Gospel Hymn": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
+          "Singer-Songwriter": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3"
         };
         liveTrackUrl = genreAudioUrls[customGenre] || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
       }
 
+      setGenerationProgress(100);
       setAudioUrl(liveTrackUrl);
+      
       if (audioRef.current) {
         audioRef.current.src = liveTrackUrl;
         audioRef.current.load();
       }
 
+      // Try to play avatar intro speech
       try {
         const speechRes = await fetch("/api/generate-avatar-intro", {
           method: "POST",
