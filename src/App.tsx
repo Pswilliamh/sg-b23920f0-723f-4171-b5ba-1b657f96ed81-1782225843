@@ -1215,6 +1215,57 @@ export default function App() {
                       A bespoke acoustic song is more than a melody; it is a sacred covenant of remembrance. Through Haddi's silver strings, your shared history, milestones, and blessings are bound into a living testament of honor, designed to persist as an unbreakable heritage of love and devotion.
                     </p>
                   </div>
+
+                  {/* [Musical Style Theme Selector - Moved from right panel] */}
+                  <div className="w-full p-5 bg-[#1c1917]/60 border border-[#C5A880]/20 rounded-xl backdrop-blur-md shadow-lg space-y-3">
+                    <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
+                      <Sliders size={16} /> Select Your Musical Style Theme:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Acoustic Folk")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Acoustic Folk" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Acoustic Folk
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Bluegrass")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Bluegrass" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Bluegrass
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Rustic Lute")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Rustic Lute" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Rustic Lute
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Modern Worship")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Modern Worship" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Worship
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Lofi Acoustic")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Lofi Acoustic" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Lofi Acoustic
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCustomGenre("Indie Pop")} 
+                        className={`px-2 py-2.5 text-[10px] md:text-xs font-semibold rounded-lg border text-center transition-all ${customGenre === "Indie Pop" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-black/40 text-white/70 border-[#C5A880]/20 hover:border-white/50"}`}
+                      >
+                        Indie Pop
+                      </button>
+                    </div>
+                  </div>
                   
                   {error && (
                     <div className="bg-red-950/40 border border-red-500/30 p-3 rounded-xl text-xs font-mono text-red-300 w-full text-center">
