@@ -1274,6 +1274,62 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* [Video Preview Player] */}
+                  <div className="w-full p-5 bg-gradient-to-br from-[#0c0b0a]/95 to-[#1c1917]/80 border border-[#FFD700]/20 rounded-xl backdrop-blur-md shadow-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
+                        📺 Video Preview
+                      </h4>
+                      {currentSong && (
+                        <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+                          Ready
+                        </span>
+                      )}
+                    </div>
+                    
+                    {currentSong ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/30 shadow-lg bg-black aspect-video">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                            <div className="w-16 h-16 rounded-full bg-[#FFD700]/10 flex items-center justify-center border border-[#FFD700]/30">
+                              <Play size={28} className="text-[#FFD700] ml-1" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs font-bold text-[#FFD700]">Video Ready to Generate</p>
+                              <p className="text-[10px] text-white/60 font-sans">
+                                "{currentSong.title}"
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => alert('Video rendering feature coming soon! FFmpeg integration in progress.')}
+                              className="px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-xs font-bold rounded-lg transition-all"
+                            >
+                              🎬 Render Video Now
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-[9px] font-mono text-white/50">
+                          <span>Duration: {videoLength} seconds</span>
+                          <span>Format: MP4 • HD Quality</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative w-full rounded-xl overflow-hidden border border-[#C5A880]/20 bg-black/60 aspect-video flex items-center justify-center">
+                        <div className="text-center space-y-2 p-6">
+                          <div className="w-12 h-12 rounded-full bg-[#C5A880]/10 flex items-center justify-center border border-[#C5A880]/20 mx-auto">
+                            <Music size={20} className="text-[#C5A880]/40" />
+                          </div>
+                          <p className="text-[10px] text-white/40 font-sans italic">
+                            Generate a song first to create video
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* [Musical Style Theme Selector - Moved from right panel] */}
                   <div className="w-full p-5 bg-[#1c1917]/60 border border-[#C5A880]/20 rounded-xl backdrop-blur-md shadow-lg space-y-3">
                     <label className="text-xs md:text-sm font-mono text-[#FFD700] uppercase tracking-widest flex items-center gap-2 font-semibold">
