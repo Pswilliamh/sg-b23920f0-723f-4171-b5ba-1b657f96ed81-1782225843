@@ -419,8 +419,8 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       console.log("[Suno Bridge] Prompt:", prompt.substring(0, 100));
       console.log("[Suno Bridge] Tags:", cleanTags);
       
-      // 302.AI's actual Suno endpoint format
-      const response = await fetch("https://api.302.ai/v1/suno/v3/submit", {
+      // FIXED: Correct 302.AI Suno endpoint (NO /v1/ prefix!)
+      const response = await fetch("https://api.302.ai/suno/submit/music", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -428,9 +428,8 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
         },
         body: JSON.stringify({
           gpt_description_prompt: prompt,
-          make_instrumental: make_instrumental === true,
           mv: "chirp-v3-5",
-          tags: cleanTags
+          make_instrumental: make_instrumental === true
         })
       });
 
