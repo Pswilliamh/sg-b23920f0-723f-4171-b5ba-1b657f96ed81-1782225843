@@ -880,7 +880,7 @@ export default function App() {
     const files = Array.from(e.target.files || []);
     
     // Validate: max 5 images, each under 5MB
-    const validFiles = files.filter(file => {
+    const validFiles = files.filter((file: File) => {
       if (!file.type.startsWith('image/')) {
         setError(`${file.name} is not an image file`);
         return false;
