@@ -18,7 +18,8 @@ export default function App() {
   // --- Lifecycles & State Management ---
   const [target, setTarget] = useState("");
   const [context, setContext] = useState("");
-  const [voiceStyle, setVoiceStyle] = useState<VoiceStyle>("male-warm");
+  const [voiceStyle, setVoiceStyle] = useState<string>("male_warm");
+  const [videoLength, setVideoLength] = useState<number>(10);
   const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
@@ -1214,6 +1215,63 @@ export default function App() {
                     <p className="text-[11px] sm:text-xs text-[#FAF9F6]/90 leading-relaxed font-sans">
                       A bespoke acoustic song is more than a melody; it is a sacred covenant of remembrance. Through Haddi's silver strings, your shared history, milestones, and blessings are bound into a living testament of honor, designed to persist as an unbreakable heritage of love and devotion.
                     </p>
+                  </div>
+
+                  {/* [Video Generation Feature] */}
+                  <div className="w-full p-5 bg-gradient-to-br from-[#1c1917]/80 to-[#251e19]/60 border border-[#FFD700]/30 rounded-xl backdrop-blur-md shadow-xl space-y-4">
+                    <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
+                      🎬 Create Gift Video
+                    </h4>
+                    <p className="text-[10px] sm:text-xs text-[#FAF9F6]/80 leading-relaxed font-sans">
+                      Transform your song into a stunning shareable video with animated lyrics and visuals.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                        Video Length:
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button 
+                          type="button"
+                          onClick={() => setVideoLength(10)}
+                          className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                            videoLength === 10 
+                              ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
+                              : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
+                          }`}
+                        >
+                          <div className="text-xs font-bold">10 Seconds</div>
+                          <div className="text-[9px] opacity-75 mt-0.5">Quick Share</div>
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setVideoLength(20)}
+                          className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                            videoLength === 20 
+                              ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
+                              : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
+                          }`}
+                        >
+                          <div className="text-xs font-bold">20 Seconds</div>
+                          <div className="text-[9px] opacity-75 mt-0.5">Full Preview</div>
+                        </button>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!currentSong) {
+                            setError("Generate a song first before creating a video!");
+                            return;
+                          }
+                          alert(`Creating ${videoLength}sec video with "${currentSong.title}"...`);
+                        }}
+                        disabled={!currentSong || isGenerating}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white font-bold text-xs rounded-lg border border-[#FFD700]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                      >
+                        🎥 Generate Video Clip
+                      </button>
+                    </div>
                   </div>
 
                   {/* [Musical Style Theme Selector] */}
