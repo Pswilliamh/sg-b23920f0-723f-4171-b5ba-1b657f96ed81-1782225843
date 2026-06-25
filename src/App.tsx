@@ -752,31 +752,21 @@ export default function App() {
       const sunoData = await sunoRes.json();
       console.log("Suno API response:", sunoData);
 
+      // Check if Suno generation was successful
+      if (!sunoData.success) {
+        throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and try again.");
+      }
+
       // Extract audio URL from Suno response
       let liveTrackUrl = null;
-      if (sunoData.success && sunoData.audio_urls && sunoData.audio_urls.length > 0) {
+      if (sunoData.audio_urls && sunoData.audio_urls.length > 0) {
         liveTrackUrl = sunoData.audio_urls[0];
         console.log("✓ Real Suno audio URL extracted:", liveTrackUrl);
       }
 
-      // Fallback to genre-specific mock if Suno fails
+      // If no audio URL, fail clearly
       if (!liveTrackUrl) {
-        console.warn("No Suno audio URL - using fallback");
-        const genreAudioUrls: Record<string, string> = {
-          "Acoustic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-          "Bluegrass": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-          "Rustic Lute": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-          "Modern Worship": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-          "Lofi Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-          "Indie Pop": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
-          "Classical Guitar": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
-          "Country Ballad": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-          "Celtic Folk": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
-          "Jazz Acoustic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-          "Gospel Hymn": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
-          "Singer-Songwriter": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3"
-        };
-        liveTrackUrl = genreAudioUrls[customGenre] || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+        throw new Error("Suno API did not return an audio URL. The song generation may have timed out or failed. Please try again.");
       }
 
       setGenerationProgress(100);
