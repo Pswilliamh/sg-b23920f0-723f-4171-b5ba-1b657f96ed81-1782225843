@@ -1942,25 +1942,18 @@ export default function App() {
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
-                              ⚡
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-bold text-[#FFD700] uppercase tracking-wider">Quick Strum</h4>
+                              <p className="text-[10px] text-[#C5A880]/80 font-mono mt-0.5">$0.99</p>
                             </div>
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Quick Strum</h4>
-                                <span className="text-lg font-bold text-[#FFD700]">$0.99</span>
-                              </div>
-                              <p className="text-xs text-white/70 leading-relaxed font-sans">
-                                Perfect for trying out our service. Get a beautiful custom song in under 60 seconds.
-                              </p>
-                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
-                                <li className="flex items-center gap-1.5">✓ Single custom song</li>
-                                <li className="flex items-center gap-1.5">✓ ~60 second generation</li>
-                                <li className="flex items-center gap-1.5">✓ Instant email delivery</li>
-                              </ul>
-                            </div>
+                            {setType === "quick" && (
+                              <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/40 rounded-full border border-emerald-500/30">Selected</span>
+                            )}
                           </div>
+                          <p className="text-[10px] sm:text-xs text-white/70 leading-relaxed">
+                            3 unique acoustic variations (60s each) — different genres, melodies & lyric styles so you can choose your favorite.
+                          </p>
                         </button>
 
                         <button
@@ -2003,30 +1996,18 @@ export default function App() {
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="absolute -top-3 -right-3 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-black text-[9px] font-bold px-3 py-1 rounded-full shadow-lg border border-white/20">
-                            ⭐ MOST POPULAR
-                          </div>
-                          <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
-                              🎥
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-bold text-[#FFD700] uppercase tracking-wider">Premium Video</h4>
+                              <p className="text-[10px] text-[#C5A880]/80 font-mono mt-0.5">$4.99</p>
                             </div>
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Premium Video</h4>
-                                <span className="text-lg font-bold text-[#FFD700]">$4.99</span>
-                              </div>
-                              <p className="text-xs text-white/70 leading-relaxed font-sans">
-                                The ultimate gift! 5 songs plus an HD video with your photos and animated lyrics.
-                              </p>
-                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
-                                <li className="flex items-center gap-1.5">✓ 5 custom song variations</li>
-                                <li className="flex items-center gap-1.5">✓ HD video with your photos</li>
-                                <li className="flex items-center gap-1.5">✓ Animated lyric display</li>
-                                <li className="flex items-center gap-1.5">✓ Upload up to 5 photos</li>
-                                <li className="flex items-center gap-1.5">✓ Full review & revision rights</li>
-                              </ul>
-                            </div>
+                            {setType === "premium" && (
+                              <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/40 rounded-full border border-emerald-500/30">Selected</span>
+                            )}
                           </div>
+                          <p className="text-[10px] sm:text-xs text-white/70 leading-relaxed">
+                            5 custom songs (120s each) + HD video with your photos, animated lyrics, and downloadable MP4.
+                          </p>
                         </button>
 
                         <button
@@ -2038,28 +2019,18 @@ export default function App() {
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
                         >
-                          <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700]/30 to-[#FFD700]/10 flex items-center justify-center text-3xl shrink-0 border border-[#FFD700]/30 group-hover:scale-110 transition-transform">
-                              👑
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-bold text-[#FFD700] uppercase tracking-wider">Legacy Bundle</h4>
+                              <p className="text-[10px] text-[#C5A880]/80 font-mono mt-0.5">$12.99</p>
                             </div>
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wide">Legacy Bundle</h4>
-                                <span className="text-lg font-bold text-[#FFD700]">$12.99</span>
-                              </div>
-                              <p className="text-xs text-white/70 leading-relaxed font-sans">
-                                Create a lasting musical legacy. Unlimited songs, premium videos, and shareable gift cards.
-                              </p>
-                              <ul className="space-y-1 text-[10px] text-white/50 font-sans">
-                                <li className="flex items-center gap-1.5">✓ Unlimited custom songs</li>
-                                <li className="flex items-center gap-1.5">✓ Premium HD video production</li>
-                                <li className="flex items-center gap-1.5">✓ Printable gift cards included</li>
-                                <li className="flex items-center gap-1.5">✓ Priority support & revisions</li>
-                                <li className="flex items-center gap-1.5">✓ Lifetime access to all songs</li>
-                                <li className="flex items-center gap-1.5">✓ Commercial usage rights</li>
-                              </ul>
-                            </div>
+                            {setType === "legacy" && (
+                              <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/40 rounded-full border border-emerald-500/30">Selected</span>
+                            )}
                           </div>
+                          <p className="text-[10px] sm:text-xs text-white/70 leading-relaxed">
+                            7 premium songs (120s each) in diverse genres + HD video with photos + digital keepsake card + full archive download.
+                          </p>
                         </button>
                       </div>
                     </div>
@@ -2070,9 +2041,18 @@ export default function App() {
                         id="strum_generate_button"
                         type="button"
                         onClick={handleStrumSong}
-                        className="w-full text-black font-display font-extrabold rounded-xl text-center py-4 text-xs md:text-sm tracking-widest uppercase cursor-pointer bg-gradient-to-r from-[#FFD700] via-[#FCE068] to-[#FFD700] hover:brightness-110 active:scale-[0.99] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.25)] flex items-center justify-center gap-2 border border-white/10"
+                        disabled={isGenerating || !target.trim()}
+                        className={`w-full px-6 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isGenerating
+                            ? "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-400/50"
+                            : "bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white border border-[#FFD700]/30"
+                        }`}
                       >
-                        🎵 STRUM THE STRINGS & RENDER
+                        {isGenerating
+                          ? generationProgress < 100
+                            ? `🎸 Strumming... ${generationProgress}%`
+                            : "✨ Song Complete!"
+                          : "🎸 Strum the Strings & Render"}
                       </button>
                     </div>
 
