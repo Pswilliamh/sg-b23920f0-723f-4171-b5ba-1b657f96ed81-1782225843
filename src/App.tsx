@@ -782,19 +782,32 @@ export default function App() {
       console.log("Suno API response:", sunoData);
 
       // Check if Suno generation was successful
-      if (!sunoData.success) {
+      if (!sunoData.success && sunoData.code !== 200) {
         throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and account credits at https://302.ai. Thank you for trying My-Gift-Song!");
       }
 
-      // Extract audio URL from Suno response
+      // Extract audio URL from 302.AI's nested response structure
       let liveTrackUrl = null;
-      if (sunoData.audio_urls && sunoData.audio_urls.length > 0) {
+      
+      // 302.AI returns: { code: 200, data: { data: [{ audio_url: "..." }] } }
+      if (sunoData.data && sunoData.data.data && Array.isArray(sunoData.data.data) && sunoData.data.data[0]?.audio_url) {
+        liveTrackUrl = sunoData.data.data[0].audio_url;
+        console.log("✓ Real Suno audio URL extracted from nested data:", liveTrackUrl);
+      }
+      // Fallback: check direct audio_urls array
+      else if (sunoData.audio_urls && sunoData.audio_urls.length > 0) {
         liveTrackUrl = sunoData.audio_urls[0];
-        console.log("✓ Real Suno audio URL extracted:", liveTrackUrl);
+        console.log("✓ Real Suno audio URL extracted from audio_urls:", liveTrackUrl);
+      }
+      // Fallback: check direct url property
+      else if (sunoData.url) {
+        liveTrackUrl = sunoData.url;
+        console.log("✓ Real Suno audio URL extracted from url:", liveTrackUrl);
       }
 
       // If no audio URL, fail clearly
       if (!liveTrackUrl) {
+        console.error("Failed to extract audio URL. Full response:", JSON.stringify(sunoData, null, 2));
         throw new Error("Suno API did not return an audio URL. The song generation may have timed out or failed. Please try again. Thank you for your patience!");
       }
 
