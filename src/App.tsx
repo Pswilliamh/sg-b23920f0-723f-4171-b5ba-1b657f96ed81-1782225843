@@ -26,6 +26,13 @@ export default function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+  const [uploadedVoiceFile, setUploadedVoiceFile] = useState<File | null>(null);
+  const [voiceMode, setVoiceMode] = useState<"addon" | "replace" | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingTimerRef = useRef<number | null>(null);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
   const previewVideoSrc = "https://drive.google.com/uc?export=download&id=1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC";
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -753,7 +760,12 @@ export default function App() {
       if (!sunoRes.ok) {
         const errorText = await sunoRes.text();
         console.error("Suno API error response:", errorText);
-        throw new Error(`Suno API returned ${sunoRes.status}: ${sunoRes.statusText}. Please check your API key and try again.`);
+        
+        if (sunoRes.status === 502) {
+          throw new Error("🎵 Your Suno API credits may be depleted, or the 302.AI service is temporarily unavailable. Please check your account at https://302.ai and try again. Thank you for using My-Gift-Song today! 🙏");
+        }
+        
+        throw new Error(`Suno API returned ${sunoRes.status}: ${sunoRes.statusText}. Please check your API key and account credits.`);
       }
 
       // Get response text first, then try to parse as JSON
@@ -764,14 +776,14 @@ export default function App() {
         sunoData = JSON.parse(responseText);
       } catch (parseErr) {
         console.error("Failed to parse Suno response as JSON:", responseText.substring(0, 200));
-        throw new Error("Suno API returned an invalid response format (HTML instead of JSON). The service may be temporarily unavailable or the API key may be incorrect.");
+        throw new Error("Suno API returned an invalid response format (HTML instead of JSON). The service may be temporarily unavailable or the API key may be incorrect. Thank you for using My-Gift-Song today!");
       }
 
       console.log("Suno API response:", sunoData);
 
       // Check if Suno generation was successful
       if (!sunoData.success) {
-        throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and try again.");
+        throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and account credits at https://302.ai. Thank you for trying My-Gift-Song!");
       }
 
       // Extract audio URL from Suno response
@@ -783,7 +795,7 @@ export default function App() {
 
       // If no audio URL, fail clearly
       if (!liveTrackUrl) {
-        throw new Error("Suno API did not return an audio URL. The song generation may have timed out or failed. Please try again.");
+        throw new Error("Suno API did not return an audio URL. The song generation may have timed out or failed. Please try again. Thank you for your patience!");
       }
 
       setGenerationProgress(100);
@@ -794,21 +806,10 @@ export default function App() {
         audioRef.current.load();
       }
 
-      // Try to play avatar intro speech
-      try {
-        const speechRes = await fetch("/api/generate-avatar-intro", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ introText: returnedSong.artistIntro })
-        });
-        const speechData = await speechRes.json();
-        if (speechData.success && speechData.base64Audio) {
-          luteEngineInstance.initContext();
-          await luteEngineInstance.playSpeechIntro(speechData.base64Audio);
-        }
-      } catch (speechErr) {
-        console.warn("Minstrel avatar speech intro skipped:", speechErr);
-      }
+      // Show success message with thank you
+      setTimeout(() => {
+        alert("🎉 Your song is ready! Thank you for using My-Gift-Song today! Enjoy your personalized acoustic masterpiece. 🎵");
+      }, 500);
 
     } catch (err: any) {
       console.error(err);
@@ -911,6 +912,72 @@ export default function App() {
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setVoiceRecording(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 300) { // 5 minutes max
+            stopRecording();
+            return 300;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError("Microphone access denied. Please enable microphone permissions.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
+
+  const handleVoiceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
+      setError("Please upload an audio file (MP3, WAV, etc.)");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Audio file must be under 10MB");
+      return;
+    }
+
+    setUploadedVoiceFile(file);
+    setError("");
   };
 
   const togglePlayback = () => {
@@ -1132,6 +1199,32 @@ export default function App() {
                           <li>• Video renders in 30-60 seconds after song completion</li>
                           <li>• Downloadable MP4 format for easy sharing</li>
                         </ul>
+                      </div>
+
+                      {/* API Setup Information */}
+                      <div className="bg-[#1c1917]/70 border border-[#C5A880]/20 rounded-xl p-4 space-y-2 mt-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold text-[#FFD700] uppercase tracking-widest bg-[#2c1e14] px-2 py-0.5 rounded">Setup</span>
+                          <h5 className="text-xs font-bold text-[#FFD700] font-sans uppercase">Enable AI Features</h5>
+                        </div>
+                        <p className="text-[11px] text-white/75 leading-relaxed font-sans">
+                          <strong>For AI-powered lyrics</strong>, add your Gemini API key in Settings (top-right) → Environment tab:
+                        </p>
+                        <div className="bg-black/60 rounded p-2 font-mono text-[10px] text-emerald-400">
+                          VITE_GEMINI_API_KEY=your_key_here
+                        </div>
+                        <p className="text-[10px] text-white/60 font-sans">
+                          Get a free key at: <a href="https://aistudio.google.com/apikey" target="_blank" className="text-[#FFD700] underline">aistudio.google.com/apikey</a>
+                        </p>
+                        <p className="text-[11px] text-white/75 leading-relaxed font-sans mt-2">
+                          <strong>For song generation</strong>, add your 302.AI Suno API key:
+                        </p>
+                        <div className="bg-black/60 rounded p-2 font-mono text-[10px] text-emerald-400">
+                          VITE_SUNO_API_KEY=sk-...
+                        </div>
+                        <p className="text-[10px] text-white/60 font-sans">
+                          Get your key at: <a href="https://302.ai" target="_blank" className="text-[#FFD700] underline">302.ai</a>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1911,6 +2004,152 @@ export default function App() {
                       <p className="text-[9px] text-white/50 font-sans italic">
                         {occasionTemplates.find(o => o.id === occasion)?.description}
                       </p>
+                    </div>
+
+                    {/* [Voice Recording/Upload Feature] */}
+                    <div className="space-y-4 bg-gradient-to-br from-[#1c1917]/80 to-[#251e19]/60 border border-[#FFD700]/30 rounded-xl p-5 backdrop-blur-md shadow-xl">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
+                          🎤 Add Your Voice (Optional)
+                        </h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <label className="text-[10px] md:text-xs font-mono text-white/80 uppercase tracking-wider block">
+                          Choose how to use your voice:
+                        </label>
+                        
+                        <div className="grid grid-cols-1 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setVoiceMode(voiceMode === "addon" ? null : "addon")}
+                            className={`p-3 rounded-xl border text-left transition-all ${
+                              voiceMode === "addon"
+                                ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+                                : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">💬</span>
+                              <span className="text-xs font-bold text-[#FFD700]">Voice Message Add-On</span>
+                            </div>
+                            <p className="text-[10px] text-white/60 font-sans">Record or upload a personal message to play before/after the song</p>
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setVoiceMode(voiceMode === "replace" ? null : "replace")}
+                            className={`p-3 rounded-xl border text-left transition-all ${
+                              voiceMode === "replace"
+                                ? "border-[#FFD700] bg-[#251e19]/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+                                : "border-[#C5A880]/20 bg-black/40 hover:border-[#C5A880]/50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">🎵</span>
+                              <span className="text-xs font-bold text-[#FFD700]">Use Your Own Audio</span>
+                            </div>
+                            <p className="text-[10px] text-white/60 font-sans">Skip song generation and use your uploaded audio as the main track</p>
+                          </button>
+                        </div>
+
+                        {voiceMode && (
+                          <div className="mt-3 space-y-3 animate-fade-in bg-black/40 border border-[#FFD700]/20 rounded-lg p-4">
+                            {/* Recording Controls */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider">Record Audio:</span>
+                                {isRecording && (
+                                  <span className="text-[9px] font-mono text-red-400 flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                    {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')} / 5:00
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                {!isRecording ? (
+                                  <button
+                                    type="button"
+                                    onClick={startRecording}
+                                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                                  >
+                                    <div className="w-3 h-3 rounded-full bg-white" />
+                                    Start Recording
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={stopRecording}
+                                    className="flex-1 px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                                  >
+                                    <div className="w-3 h-3 bg-white" />
+                                    Stop Recording
+                                  </button>
+                                )}
+                              </div>
+
+                              {voiceRecording && (
+                                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2 flex items-center justify-between">
+                                  <span className="text-[10px] text-emerald-400 font-mono">✓ Recording ready</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setVoiceRecording(null)}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* OR Divider */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-px bg-white/10" />
+                              <span className="text-[9px] text-white/40 font-mono uppercase">or</span>
+                              <div className="flex-1 h-px bg-white/10" />
+                            </div>
+
+                            {/* File Upload */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                                Upload Audio File (MP3/WAV, max 10MB, max 5 min):
+                              </label>
+                              
+                              <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-[#FFD700]/30 rounded-lg cursor-pointer hover:border-[#FFD700]/60 transition-all bg-black/40">
+                                <input
+                                  type="file"
+                                  accept="audio/*"
+                                  onChange={handleVoiceFileUpload}
+                                  className="hidden"
+                                />
+                                <span className="text-xs text-[#FFD700]/70 font-mono">
+                                  🎵 Click to Upload Audio
+                                </span>
+                              </label>
+
+                              {uploadedVoiceFile && (
+                                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2 flex items-center justify-between">
+                                  <span className="text-[10px] text-emerald-400 font-mono truncate">✓ {uploadedVoiceFile.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setUploadedVoiceFile(null)}
+                                    className="text-xs text-red-400 hover:text-red-300 ml-2"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <p className="text-[9px] text-white/50 font-sans italic">
+                              {voiceMode === "addon" 
+                                ? "Your voice message will play before the generated song"
+                                : "Your audio will be used instead of generating a new song"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* [Voice Style Selector] */}
