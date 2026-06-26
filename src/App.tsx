@@ -1067,7 +1067,7 @@ export default function App() {
                     {/* The 4-Step Gifting Journey */}
                     <div className="space-y-4">
                       <h4 className="text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
-                        🚀 The 4-Step Gifting Journey
+                        🚀 The Gifting Journey
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pl-4">
                         <div className="bg-[#1c1917]/70 border border-[#C5A880]/15 rounded-xl p-4 space-y-2">
@@ -1086,18 +1086,35 @@ export default function App() {
                         </div>
                         <div className="bg-[#1c1917]/70 border border-[#C5A880]/15 rounded-xl p-4 space-y-2">
                           <span className="text-[10px] font-mono font-bold text-[#FFD700] uppercase tracking-widest bg-[#2c1e14] px-2 py-0.5 rounded">Step 03</span>
-                          <h5 className="text-xs font-bold text-white font-sans uppercase">Choose Frequency & Images</h5>
+                          <h5 className="text-xs font-bold text-white font-sans uppercase">Choose Package & Theme</h5>
                           <p className="text-[11px] text-white/75 leading-relaxed font-sans">
-                            Select a dedicated music theme and package bundle. For Premium Video ($4.99) or Legacy Bundle ($12.99), attach up to 5 personal photos to build a custom lyric slideshow.
+                            Select your gift package (Quick Strum, Full Set, Premium Video, or Legacy Bundle) and music theme.
                           </p>
                         </div>
                         <div className="bg-[#1c1917]/70 border border-[#C5A880]/15 rounded-xl p-4 space-y-2">
                           <span className="text-[10px] font-mono font-bold text-[#FFD700] uppercase tracking-widest bg-[#2c1e14] px-2 py-0.5 rounded">Step 04</span>
                           <h5 className="text-xs font-bold text-white font-sans uppercase">Strum & Receive</h5>
                           <p className="text-[11px] text-white/75 leading-relaxed font-sans">
-                            Securely checkout to compile Haddi's blessing. The high-fidelity audio or video link will be deployed directly to the recipient's inbox!
+                            Click "Strum the Strings" to generate your song. The audio will be ready in 30-90 seconds.
                           </p>
                         </div>
+                      </div>
+                      
+                      {/* Optional Video Creation Step */}
+                      <div className="bg-[#2c1e14]/50 border-2 border-[#FFD700]/30 rounded-xl p-4 space-y-2 mt-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold text-[#FFD700] uppercase tracking-widest bg-[#1c1917] px-2 py-0.5 rounded">Optional</span>
+                          <h5 className="text-xs font-bold text-[#FFD700] font-sans uppercase">Create Gift Video</h5>
+                        </div>
+                        <p className="text-[11px] text-white/75 leading-relaxed font-sans">
+                          <strong>After your song is generated</strong>, you can optionally create a stunning HD video (Premium Video or Legacy Bundle packages only). Upload 3-5 personal photos, choose video length (10 or 20 seconds), and click "Generate Video" below the audio player. Your video will include animated lyrics synced with your custom song.
+                        </p>
+                        <ul className="space-y-1 text-[10px] text-white/60 font-sans pl-4">
+                          <li>• Only available for Premium Video ($4.99) and Legacy Bundle ($12.99)</li>
+                          <li>• Upload 3-5 photos (max 5MB each)</li>
+                          <li>• Video renders in 30-60 seconds after song completion</li>
+                          <li>• Downloadable MP4 format for easy sharing</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
@@ -1329,102 +1346,133 @@ export default function App() {
 
                   {/* [Video Generation Feature] */}
                   <div className="w-full p-5 bg-gradient-to-br from-[#1c1917]/80 to-[#251e19]/60 border border-[#FFD700]/30 rounded-xl backdrop-blur-md shadow-xl space-y-4">
-                    <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
-                      🎬 Create Gift Video
-                    </h4>
-                    <p className="text-[10px] sm:text-xs text-[#FAF9F6]/80 leading-relaxed font-sans">
-                      Transform your song into a stunning shareable video with animated lyrics and your photos.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      {/* Photo Upload Section */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
-                          Upload Photos (3-5 images, max 5MB each):
-                        </label>
-                        
-                        {uploadedPhotos.length > 0 && (
-                          <div className="grid grid-cols-3 gap-2">
-                            {uploadedPhotos.map((photo, idx) => (
-                              <div key={idx} className="relative group">
-                                <img 
-                                  src={URL.createObjectURL(photo)} 
-                                  alt={`Upload ${idx + 1}`}
-                                  className="w-full h-20 object-cover rounded-lg border border-[#FFD700]/30"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removePhoto(idx)}
-                                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {uploadedPhotos.length < 5 && (
-                          <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-[#FFD700]/30 rounded-lg cursor-pointer hover:border-[#FFD700]/60 transition-all bg-black/40">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={handlePhotoUpload}
-                              className="hidden"
-                            />
-                            <span className="text-xs text-[#FFD700]/70 font-mono">
-                              📸 Click to Upload Photos ({uploadedPhotos.length}/5)
-                            </span>
-                          </label>
-                        )}
-                        
-                        {uploadedPhotos.length > 0 && (
-                          <p className="text-[9px] text-emerald-400 font-mono">
-                            ✓ {uploadedPhotos.length} photo{uploadedPhotos.length > 1 ? 's' : ''} ready for video
-                          </p>
-                        )}
-                      </div>
-
-                      <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
-                        Video Length:
-                      </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button 
-                          type="button"
-                          onClick={() => setVideoLength(10)}
-                          className={`px-4 py-3 rounded-lg border text-center transition-all ${
-                            videoLength === 10 
-                              ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
-                              : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
-                          }`}
-                        >
-                          <div className="text-xs font-bold">10 Seconds</div>
-                          <div className="text-[9px] opacity-75 mt-0.5">Quick Share</div>
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setVideoLength(20)}
-                          className={`px-4 py-3 rounded-lg border text-center transition-all ${
-                            videoLength === 20 
-                              ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
-                              : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
-                          }`}
-                        >
-                          <div className="text-xs font-bold">20 Seconds</div>
-                          <div className="text-[9px] opacity-75 mt-0.5">Full Preview</div>
-                        </button>
-                      </div>
-                      
-                      <button
-                        type="button"
-                        onClick={handleGenerateVideo}
-                        disabled={!currentSong || isGenerating || isGeneratingVideo || uploadedPhotos.length < 3}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white font-bold text-xs rounded-lg border border-[#FFD700]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
-                      >
-                        {isGeneratingVideo ? "Rendering..." : uploadedPhotos.length < 3 ? "Upload 3+ Photos First" : "🎥 Generate Video Clip"}
-                      </button>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs sm:text-sm font-mono font-bold text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
+                        🎬 Optional: Create Gift Video
+                      </h4>
+                      {(setType === "premium" || setType === "legacy") && (
+                        <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/40 rounded-full border border-emerald-500/30">
+                          Available
+                        </span>
+                      )}
                     </div>
+                    
+                    {(setType !== "premium" && setType !== "legacy") ? (
+                      <div className="text-center py-6 space-y-3">
+                        <div className="text-3xl">🔒</div>
+                        <p className="text-xs text-white/60 leading-relaxed font-sans">
+                          Video creation is only available with <strong className="text-[#FFD700]">Premium Video</strong> ($4.99) or <strong className="text-[#FFD700]">Legacy Bundle</strong> ($12.99) packages.
+                        </p>
+                        <p className="text-[10px] text-white/40 italic font-sans">
+                          Select one of these packages above to unlock video creation.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-[10px] sm:text-xs text-[#FAF9F6]/80 leading-relaxed font-sans bg-black/30 p-3 rounded-lg border border-[#FFD700]/20">
+                          <strong className="text-[#FFD700]">How it works:</strong> First, generate your song by clicking "Strum the Strings" below. Once your song is ready, return here to upload photos and create your video.
+                        </p>
+                        
+                        <div className="space-y-3">
+                          {/* Photo Upload Section */}
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                              Upload Photos (3-5 images, max 5MB each):
+                            </label>
+                            
+                            {uploadedPhotos.length > 0 && (
+                              <div className="grid grid-cols-3 gap-2">
+                                {uploadedPhotos.map((photo, idx) => (
+                                  <div key={idx} className="relative group">
+                                    <img 
+                                      src={URL.createObjectURL(photo)} 
+                                      alt={`Upload ${idx + 1}`}
+                                      className="w-full h-20 object-cover rounded-lg border border-[#FFD700]/30"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removePhoto(idx)}
+                                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {uploadedPhotos.length < 5 && (
+                              <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-[#FFD700]/30 rounded-lg cursor-pointer hover:border-[#FFD700]/60 transition-all bg-black/40">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handlePhotoUpload}
+                                  className="hidden"
+                                />
+                                <span className="text-xs text-[#FFD700]/70 font-mono">
+                                  📸 Click to Upload Photos ({uploadedPhotos.length}/5)
+                                </span>
+                              </label>
+                            )}
+                            
+                            {uploadedPhotos.length > 0 && (
+                              <p className="text-[9px] text-emerald-400 font-mono">
+                                ✓ {uploadedPhotos.length} photo{uploadedPhotos.length > 1 ? 's' : ''} ready for video
+                              </p>
+                            )}
+                          </div>
+
+                          <label className="text-[10px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                            Video Length:
+                          </label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button 
+                              type="button"
+                              onClick={() => setVideoLength(10)}
+                              className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                                videoLength === 10 
+                                  ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
+                                  : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
+                              }`}
+                            >
+                              <div className="text-xs font-bold">10 Seconds</div>
+                              <div className="text-[9px] opacity-75 mt-0.5">Quick Share</div>
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => setVideoLength(20)}
+                              className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                                videoLength === 20 
+                                  ? "bg-[#FFD700] text-black border-[#FFD700] shadow-lg" 
+                                  : "bg-black/50 text-white/70 border-[#C5A880]/30 hover:border-[#FFD700]/50"
+                              }`}
+                            >
+                              <div className="text-xs font-bold">20 Seconds</div>
+                              <div className="text-[9px] opacity-75 mt-0.5">Full Preview</div>
+                            </button>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={handleGenerateVideo}
+                            disabled={!currentSong || !audioUrl || isGenerating || isGeneratingVideo || uploadedPhotos.length < 3}
+                            className="w-full px-4 py-3 bg-gradient-to-r from-[#8B4513] to-[#A0522D] hover:from-[#A0522D] hover:to-[#CD853F] text-white font-bold text-xs rounded-lg border border-[#FFD700]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                          >
+                            {isGeneratingVideo ? "Rendering Video..." : 
+                             !currentSong ? "Generate Song First" :
+                             uploadedPhotos.length < 3 ? "Upload 3+ Photos First" : 
+                             "🎥 Generate Video Clip"}
+                          </button>
+                          
+                          {!currentSong && !audioUrl && (
+                            <p className="text-[9px] text-amber-400/80 font-mono text-center italic">
+                              ⚠️ Generate your song first by clicking "Strum the Strings" below
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* [Video Preview Player] */}
