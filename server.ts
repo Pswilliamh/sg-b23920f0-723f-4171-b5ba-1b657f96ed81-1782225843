@@ -507,24 +507,34 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       
       console.log("[Suno Bridge] Status response:", JSON.stringify(statusResult, null, 2).substring(0, 300));
       
-      // Check if job is complete
-      if (statusResult.status === "complete" || statusResult.status === "success") {
-        // Extract audio URL from various possible response formats
-        if (statusResult.audio_url) {
-          audioUrl = statusResult.audio_url;
-        } else if (statusResult.data && statusResult.data.audio_url) {
-          audioUrl = statusResult.data.audio_url;
-        } else if (Array.isArray(statusResult.data)) {
-          audioUrl = statusResult.data[0]?.audio_url;
-        } else if (statusResult.url) {
-          audioUrl = statusResult.url;
+      // Handle 302.AI's nested response structure
+      // Response format: { code: 200, data: { data: [{ status: "SUCCESS", audio_url: "..." }] } }
+      let jobStatus = null;
+      let extractedAudioUrl = null;
+      
+      // Check nested data structure
+      if (statusResult.data && statusResult.data.data && Array.isArray(statusResult.data.data)) {
+        const jobData = statusResult.data.data[0];
+        if (jobData) {
+          jobStatus = jobData.status;
+          extractedAudioUrl = jobData.audio_url;
         }
-        
-        if (audioUrl) {
-          console.log(`[Suno Bridge] ✓ Audio URL extracted: ${audioUrl}`);
+      }
+      // Fallback: check flat structure
+      else if (statusResult.status) {
+        jobStatus = statusResult.status;
+        extractedAudioUrl = statusResult.audio_url || statusResult.data?.audio_url;
+      }
+      
+      console.log(`[Suno Bridge] Job status: ${jobStatus || "unknown"} (attempt ${attempts}/${maxAttempts})`);
+      
+      // Check if job is complete (handle both "SUCCESS" and "complete"/"success")
+      if (jobStatus === "SUCCESS" || jobStatus === "complete" || jobStatus === "success") {
+        if (extractedAudioUrl) {
+          console.log(`[Suno Bridge] ✓ Audio URL extracted: ${extractedAudioUrl}`);
           return res.json({
             success: true,
-            audio_urls: [audioUrl]
+            audio_urls: [extractedAudioUrl]
           });
         } else {
           return res.status(500).json({
@@ -533,15 +543,13 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
             details: JSON.stringify(statusResult)
           });
         }
-      } else if (statusResult.status === "failed" || statusResult.status === "error") {
+      } else if (jobStatus === "FAILED" || jobStatus === "failed" || jobStatus === "ERROR" || jobStatus === "error") {
         console.error("[Suno Bridge] ❌ Job failed:", statusResult);
         return res.status(500).json({
           success: false,
           error: `Suno music generation failed: ${statusResult.error || statusResult.message || "Unknown error"}`,
           details: JSON.stringify(statusResult)
         });
-      } else {
-        console.log(`[Suno Bridge] Job status: ${statusResult.status || "processing"} (attempt ${attempts}/${maxAttempts})`);
       }
     }
     
