@@ -749,20 +749,22 @@ export default function App() {
         })
       });
 
-      // Check if response is ok before parsing JSON
+      // Check if response is ok and parse properly
       if (!sunoRes.ok) {
         const errorText = await sunoRes.text();
         console.error("Suno API error response:", errorText);
         throw new Error(`Suno API returned ${sunoRes.status}: ${sunoRes.statusText}. Please check your API key and try again.`);
       }
 
+      // Get response text first, then try to parse as JSON
+      const responseText = await sunoRes.text();
       let sunoData;
+      
       try {
-        sunoData = await sunoRes.json();
+        sunoData = JSON.parse(responseText);
       } catch (parseErr) {
-        const responseText = await sunoRes.text();
-        console.error("Failed to parse Suno response as JSON:", responseText);
-        throw new Error("Suno API returned an invalid response format. The service may be temporarily unavailable.");
+        console.error("Failed to parse Suno response as JSON:", responseText.substring(0, 200));
+        throw new Error("Suno API returned an invalid response format (HTML instead of JSON). The service may be temporarily unavailable or the API key may be incorrect.");
       }
 
       console.log("Suno API response:", sunoData);
