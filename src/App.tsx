@@ -1937,7 +1937,7 @@ export default function App() {
                           type="button"
                           onClick={() => setSetType("quick")}
                           className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
-                            setSetType === "quick"
+                            setType === "quick"
                               ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
@@ -1967,7 +1967,7 @@ export default function App() {
                           type="button"
                           onClick={() => setSetType("extended")}
                           className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
-                            setSetType === "extended"
+                            setType === "extended"
                               ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
@@ -1998,7 +1998,7 @@ export default function App() {
                           type="button"
                           onClick={() => setSetType("premium")}
                           className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
-                            setSetType === "premium"
+                            setType === "premium"
                               ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
@@ -2033,7 +2033,7 @@ export default function App() {
                           type="button"
                           onClick={() => setSetType("legacy")}
                           className={`p-5 rounded-2xl border-2 text-left transition-all relative group ${
-                            setSetType === "legacy"
+                            setType === "legacy"
                               ? "border-[#FFD700] bg-[#251e19]/90 shadow-[0_0_25px_rgba(255,215,0,0.4)]"
                               : "border-[#C5A880]/30 bg-black/50 hover:border-[#FFD700]/60 hover:bg-black/70"
                           }`}
