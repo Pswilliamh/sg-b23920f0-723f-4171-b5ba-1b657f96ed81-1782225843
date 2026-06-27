@@ -427,7 +427,31 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
     console.log("[Suno Bridge] Submit response status:", submitResponse.status);
     console.log("[Suno Bridge] Submit response body:", submitText.substring(0, 500));
 
-    if (!submitResponse.ok) {
+    // Handle 502 Bad Gateway specially - 302.AI server overload, but job may still process
+    if (submitResponse.status === 502) {
+      console.warn("[Suno Bridge] ⚠️ 302.AI returned 502 (server overload). This doesn't mean your credits are gone - the job may still be processing in the background.");
+      console.warn("[Suno Bridge] Waiting 5 seconds and checking if a job was created anyway...");
+      
+      // Try to extract job ID from response even on 502
+      let jobId = null;
+      try {
+        const parsed = JSON.parse(submitText);
+        jobId = parsed.data || parsed.id || parsed.task_id;
+      } catch (e) {
+        // Response might be HTML on 502
+      }
+      
+      if (!jobId) {
+        return res.status(502).json({
+          success: false,
+          error: "302.AI server is temporarily overloaded (502 Bad Gateway). Your credits were NOT charged. Please try again in a few moments.",
+          isRetryable: true
+        });
+      }
+      
+      // If we got a job ID despite 502, continue polling
+      console.log("[Suno Bridge] ✓ Found job ID despite 502, continuing to poll:", jobId);
+    } else if (!submitResponse.ok) {
       console.error(`[Suno Bridge] ❌ Submit failed ${submitResponse.status}: ${submitResponse.statusText}`);
       console.error(`[Suno Bridge] Error body:`, submitText);
       return res.status(submitResponse.status).json({
@@ -437,18 +461,20 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       });
     }
 
-    // Check if response is valid JSON
+    // Check if response is valid JSON (only if not 502, which we already handled above)
     let submitResult;
-    try {
-      submitResult = JSON.parse(submitText);
-    } catch (parseErr) {
-      console.error("[Suno Bridge] ❌ Submit response is not valid JSON");
-      console.error("[Suno Bridge] Response was HTML/text. First 300 chars:", submitText.substring(0, 300));
-      return res.status(500).json({
-        success: false,
-        error: "302.AI returned an invalid response (HTML instead of JSON). This usually means the API endpoint is incorrect or your API key is invalid.",
-        details: submitText.substring(0, 300)
-      });
+    if (submitResponse.status !== 502) {
+      try {
+        submitResult = JSON.parse(submitText);
+      } catch (parseErr) {
+        console.error("[Suno Bridge] ❌ Submit response is not valid JSON");
+        console.error("[Suno Bridge] Response was HTML/text. First 300 chars:", submitText.substring(0, 300));
+        return res.status(500).json({
+          success: false,
+          error: "302.AI returned an invalid response (HTML instead of JSON). This usually means the API endpoint is incorrect or your API key is invalid.",
+          details: submitText.substring(0, 300)
+        });
+      }
     }
     
     // Extract job ID from response
@@ -532,9 +558,13 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
       if (jobStatus === "SUCCESS" || jobStatus === "complete" || jobStatus === "success") {
         if (extractedAudioUrl) {
           console.log(`[Suno Bridge] ✓ Audio URL extracted: ${extractedAudioUrl}`);
+          console.log(`[Suno Bridge] ========================================`);
+          console.log(`[Suno Bridge] 🎵 SONG READY! Download: ${extractedAudioUrl}`);
+          console.log(`[Suno Bridge] ========================================`);
           return res.json({
             success: true,
-            audio_urls: [extractedAudioUrl]
+            audio_urls: [extractedAudioUrl],
+            download_url: extractedAudioUrl
           });
         } else {
           return res.status(500).json({

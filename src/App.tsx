@@ -26,6 +26,7 @@ export default function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [occasion, setOccasion] = useState<OccasionType>("birthday");
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
   const [uploadedVoiceFile, setUploadedVoiceFile] = useState<File | null>(null);
   const [voiceMode, setVoiceMode] = useState<"addon" | "replace" | null>(null);
@@ -762,7 +763,7 @@ export default function App() {
         console.error("Suno API error response:", errorText);
         
         if (sunoRes.status === 502) {
-          throw new Error("🎵 Your Suno API credits may be depleted, or the 302.AI service is temporarily unavailable. Please check your account at https://302.ai and try again. Thank you for using My-Gift-Song today! 🙏");
+          throw new Error("🔄 302.AI server is temporarily overloaded (502 Bad Gateway). Your song credits were NOT charged. Please wait 30 seconds and try again. If this persists, check the PM2 logs - your song may have generated successfully in the background! Thank you for your patience with My-Gift-Song! 🙏");
         }
         
         throw new Error(`Suno API returned ${sunoRes.status}: ${sunoRes.statusText}. Please check your API key and account credits.`);
@@ -783,45 +784,59 @@ export default function App() {
 
       // Check if Suno generation was successful
       if (!sunoData.success && sunoData.code !== 200) {
+        // Check if it's a retryable error
+        if (sunoData.isRetryable) {
+          throw new Error("302.AI server is temporarily overloaded. Your credits were NOT charged. Please try again in 30 seconds. 🙏");
+        }
         throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and account credits at https://302.ai. Thank you for trying My-Gift-Song!");
       }
 
-      // Extract audio URL - server returns { success: true, audio_urls: [...] }
+      // Extract audio URL - server returns { success: true, audio_urls: [...], download_url: "..." }
       let liveTrackUrl = null;
+      let directDownloadUrl = null;
       
       // PRIMARY: Check server's audio_urls array (what our backend returns)
       if (sunoData.audio_urls && Array.isArray(sunoData.audio_urls) && sunoData.audio_urls.length > 0) {
         liveTrackUrl = sunoData.audio_urls[0];
+        directDownloadUrl = sunoData.download_url || liveTrackUrl;
         console.log("✓ Suno audio URL extracted from server response:", liveTrackUrl);
       }
       // FALLBACK: Check 302.AI's nested structure (if server passes raw response)
       else if (sunoData.data && sunoData.data.data && Array.isArray(sunoData.data.data) && sunoData.data.data[0]?.audio_url) {
         liveTrackUrl = sunoData.data.data[0].audio_url;
+        directDownloadUrl = liveTrackUrl;
         console.log("✓ Suno audio URL extracted from nested 302.AI data:", liveTrackUrl);
       }
       // FALLBACK: Check direct url property
       else if (sunoData.url) {
         liveTrackUrl = sunoData.url;
+        directDownloadUrl = liveTrackUrl;
         console.log("✓ Suno audio URL extracted from url property:", liveTrackUrl);
       }
 
-      // If no audio URL, fail clearly
+      // If no audio URL, fail clearly with download suggestion
       if (!liveTrackUrl) {
         console.error("Failed to extract audio URL. Full response:", JSON.stringify(sunoData, null, 2));
-        throw new Error("Suno API did not return an audio URL. The song generation may have timed out or failed. Please try again. Thank you for your patience!");
+        throw new Error("Suno API did not return an audio URL. The song may have generated successfully - check the browser console or PM2 logs for the download link. Thank you for your patience!");
       }
 
       setGenerationProgress(100);
       setAudioUrl(liveTrackUrl);
+      setDownloadUrl(directDownloadUrl || liveTrackUrl);
       
       if (audioRef.current) {
         audioRef.current.src = liveTrackUrl;
         audioRef.current.load();
       }
 
-      // Show success message with thank you
+      // Show success message with download link
       setTimeout(() => {
-        alert("🎉 Your song is ready! Thank you for using My-Gift-Song today! Enjoy your personalized acoustic masterpiece. 🎵");
+        alert(`🎉 Your song is ready!\n\n✅ Playing in the audio player below\n🔗 Direct download link copied to clipboard\n\nThank you for using My-Gift-Song today! 🎵`);
+        
+        // Copy download URL to clipboard
+        if (directDownloadUrl && navigator.clipboard) {
+          navigator.clipboard.writeText(directDownloadUrl).catch(() => {});
+        }
       }, 500);
 
     } catch (err: any) {
@@ -1366,6 +1381,32 @@ export default function App() {
                         controls={true}
                         className="w-full mt-2 block rounded-lg bg-black/40 border border-[#FFD700]/20 text-white"
                       />
+
+                      {/* Direct Download Link */}
+                      {downloadUrl && (
+                        <div className="mt-4 bg-gradient-to-r from-[#251e19]/80 to-[#1c1917]/80 border-2 border-[#FFD700]/40 rounded-xl p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1">
+                              <p className="text-xs font-bold text-[#FFD700] uppercase tracking-wider mb-1">
+                                🎵 Direct Download Link
+                              </p>
+                              <p className="text-[10px] text-white/60 font-mono truncate">
+                                {downloadUrl}
+                              </p>
+                            </div>
+                            <a
+                              href={downloadUrl}
+                              download="my-gift-song.mp3"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-[#FFD700] hover:bg-[#FFD700]/90 text-[#1c1917] font-bold text-xs rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2 whitespace-nowrap"
+                            >
+                              <span>⬇️</span>
+                              Download MP3
+                            </a>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Progress Line */}
                       <div className="w-full space-y-1">
