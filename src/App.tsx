@@ -786,23 +786,23 @@ export default function App() {
         throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and account credits at https://302.ai. Thank you for trying My-Gift-Song!");
       }
 
-      // Extract audio URL from 302.AI's nested response structure
+      // Extract audio URL - server returns { success: true, audio_urls: [...] }
       let liveTrackUrl = null;
       
-      // 302.AI returns: { code: 200, data: { data: [{ audio_url: "..." }] } }
-      if (sunoData.data && sunoData.data.data && Array.isArray(sunoData.data.data) && sunoData.data.data[0]?.audio_url) {
-        liveTrackUrl = sunoData.data.data[0].audio_url;
-        console.log("✓ Real Suno audio URL extracted from nested data:", liveTrackUrl);
-      }
-      // Fallback: check direct audio_urls array
-      else if (sunoData.audio_urls && sunoData.audio_urls.length > 0) {
+      // PRIMARY: Check server's audio_urls array (what our backend returns)
+      if (sunoData.audio_urls && Array.isArray(sunoData.audio_urls) && sunoData.audio_urls.length > 0) {
         liveTrackUrl = sunoData.audio_urls[0];
-        console.log("✓ Real Suno audio URL extracted from audio_urls:", liveTrackUrl);
+        console.log("✓ Suno audio URL extracted from server response:", liveTrackUrl);
       }
-      // Fallback: check direct url property
+      // FALLBACK: Check 302.AI's nested structure (if server passes raw response)
+      else if (sunoData.data && sunoData.data.data && Array.isArray(sunoData.data.data) && sunoData.data.data[0]?.audio_url) {
+        liveTrackUrl = sunoData.data.data[0].audio_url;
+        console.log("✓ Suno audio URL extracted from nested 302.AI data:", liveTrackUrl);
+      }
+      // FALLBACK: Check direct url property
       else if (sunoData.url) {
         liveTrackUrl = sunoData.url;
-        console.log("✓ Real Suno audio URL extracted from url:", liveTrackUrl);
+        console.log("✓ Suno audio URL extracted from url property:", liveTrackUrl);
       }
 
       // If no audio URL, fail clearly
