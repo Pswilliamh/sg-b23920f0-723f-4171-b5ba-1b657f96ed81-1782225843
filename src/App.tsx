@@ -28,6 +28,8 @@ export default function App() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+  const [manualSongUrl, setManualSongUrl] = useState<string>("");
+  const [showManualImport, setShowManualImport] = useState(false);
   const [uploadedVoiceFile, setUploadedVoiceFile] = useState<File | null>(null);
   const [voiceMode, setVoiceMode] = useState<"addon" | "replace" | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -1033,6 +1035,58 @@ export default function App() {
     setStage(1);
   };
 
+  const handleLoadManualSong = () => {
+    if (!manualSongUrl.trim()) {
+      setError("Please enter a valid song URL");
+      return;
+    }
+
+    // Validate URL format
+    if (!manualSongUrl.startsWith("http")) {
+      setError("Please enter a valid HTTP/HTTPS URL");
+      return;
+    }
+
+    // Create a basic song object for manual imports
+    const manualSong: SongData = {
+      id: `manual-${Date.now()}`,
+      title: `Song for ${target || "Someone Special"}`,
+      target: target || "Someone Special",
+      context: context || "A beautiful personalized song",
+      setType: "quick",
+      tempo: "Custom (Manual Import)",
+      genre: customGenre || "Acoustic Folk",
+      artistIntro: `A special song created for ${target || "you"}.`,
+      lyricSections: [
+        {
+          sectionName: "Manual Import",
+          lines: ["This song was manually imported.", "Enjoy the music!"],
+          chords: ["G", "C"],
+          timestamps: [0, 30]
+        }
+      ],
+      totalDurationSeconds: 120
+    };
+
+    setCurrentSong(manualSong);
+    setAudioUrl(manualSongUrl);
+    setDownloadUrl(manualSongUrl);
+
+    if (audioRef.current) {
+      audioRef.current.src = manualSongUrl;
+      audioRef.current.load();
+    }
+
+    setGenerationProgress(100);
+    setIsGenerating(false);
+    setIsRendering(false);
+    setShowManualImport(false);
+    setStage(3);
+    setError("");
+
+    alert("🎵 Song loaded successfully! You can now create your gift card and share it.");
+  };
+
   const handleShareWhatsApp = () => {
     if (!currentSong) return;
     const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
@@ -1349,6 +1403,72 @@ export default function App() {
                           <span>⏱️ Estimated: 30-60 seconds</span>
                           <span className="font-bold">{Math.round(generationProgress)}%</span>
                         </div>
+
+                        {generationProgress >= 95 && generationProgress < 100 && (
+                          <div className="mt-4 pt-4 border-t border-[#FFD700]/20 space-y-2 animate-fade-in">
+                            <p className="text-[10px] text-amber-400 font-mono">
+                              ⚠️ Taking longer than expected?
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowManualImport(true);
+                                setIsGenerating(false);
+                              }}
+                              className="px-3 py-1.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all"
+                            >
+                              Import Song Manually
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : showManualImport ? (
+                    <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/40 shadow-[0_0_25px_rgba(255,215,0,0.2)] bg-[#120e0a]/95 flex flex-col justify-center items-center p-6 aspect-video min-h-[200px] space-y-4">
+                      <div className="w-full space-y-3">
+                        <div className="text-center space-y-1">
+                          <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wider">🎵 Manual Song Import</h4>
+                          <p className="text-[10px] text-white/60 font-sans">
+                            Paste your song URL from PM2 logs or previous generation
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-mono text-[#FFD700]/90 uppercase tracking-wider block">
+                            Song URL:
+                          </label>
+                          <input
+                            type="url"
+                            value={manualSongUrl}
+                            onChange={(e) => setManualSongUrl(e.target.value)}
+                            placeholder="https://file.302.ai/gpt/imgs/..."
+                            className="w-full bg-black/80 border border-[#FFD700]/30 rounded-lg px-3 py-2 text-white text-[11px] placeholder-white/30 focus:outline-none focus:border-[#FFD700] font-mono"
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={handleLoadManualSong}
+                            className="flex-1 px-4 py-2.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-xs font-bold rounded-lg transition-all"
+                          >
+                            ✅ Load Song & Continue to Gift Card
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowManualImport(false);
+                              setManualSongUrl("");
+                            }}
+                            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        <p className="text-[9px] text-white/40 font-sans italic text-center">
+                          After loading, you'll be able to create gift cards and share your song
+                        </p>
                       </div>
                     </div>
                   ) : audioUrl ? (
@@ -1862,6 +1982,18 @@ export default function App() {
                   {error && (
                     <div className="bg-red-950/40 border border-red-500/30 p-3 rounded-xl text-xs font-mono text-red-300 w-full text-center">
                       ⚠️ {error}
+                      {error.includes("95") || error.includes("502") || error.includes("timeout") ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowManualImport(true);
+                            setError("");
+                          }}
+                          className="block w-full mt-2 px-3 py-1.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all"
+                        >
+                          Import Song Manually Instead
+                        </button>
+                      ) : null}
                     </div>
                   )}
                 </div>
