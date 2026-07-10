@@ -2678,7 +2678,7 @@ export default function App() {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={handleGenerateSong}
+                  onClick={handleStrumSong}
                   disabled={isGenerating || isRendering || isProcessing}
                   className={`flex-1 py-4 rounded-xl font-bold text-base transition-all shadow-[0_0_30px_rgba(255,215,0,0.3)] ${
                     isGenerating || isRendering || isProcessing
