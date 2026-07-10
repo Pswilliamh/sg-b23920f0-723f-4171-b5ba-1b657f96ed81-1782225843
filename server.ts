@@ -565,13 +565,25 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
           console.log(`[Suno Bridge] ========================================`);
           
           // Cache the song URL with user context for easy retrieval
-          if (cleanTarget) {
-            const cacheKey = `${cleanTarget.toLowerCase().trim()}-${cleanContext.substring(0, 50).toLowerCase().trim()}`;
-            songCache.set(cacheKey, {
+          if (cleanTarget && cleanContext) {
+            // Use simple incrementing key for "latest songs" retrieval
+            const timestamp = Date.now();
+            const latestKey = `latest-${timestamp}`;
+            const contextKey = `${cleanTarget.toLowerCase().trim()}-${cleanContext.substring(0, 50).toLowerCase().trim()}`;
+            
+            const cacheEntry = {
               audioUrl: extractedAudioUrl,
-              timestamp: Date.now()
-            });
-            console.log(`[Suno Bridge] ✓ Cached song for retrieval: ${cacheKey}`);
+              timestamp: timestamp,
+              target: cleanTarget,
+              context: cleanContext.substring(0, 100)
+            };
+            
+            // Store in both keys for different retrieval methods
+            songCache.set(latestKey, cacheEntry);
+            songCache.set(contextKey, cacheEntry);
+            saveCacheToFile();
+            
+            console.log(`[Suno Bridge] ✓ Cached song for retrieval with keys: ${latestKey}, ${contextKey}`);
           }
           
           return res.json({
@@ -939,16 +951,49 @@ app.post("/api/create-checkout-session", async (req, res) => {
   }
 });
 
-// Song cache for retrieval (in-memory - for production, use Redis or database)
-const songCache = new Map<string, { audioUrl: string, timestamp: number }>();
+// File-based song cache for persistence across server restarts
+const CACHE_FILE = path.join(process.cwd(), ".softgen", "song-cache.json");
 
-// Cache cleanup every 10 minutes (remove songs older than 1 hour)
+// Ensure cache directory exists
+if (!fs.existsSync(path.dirname(CACHE_FILE))) {
+  fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
+}
+
+// Load existing cache from file
+let songCache: Map<string, { audioUrl: string, timestamp: number, target: string, context: string }> = new Map();
+try {
+  if (fs.existsSync(CACHE_FILE)) {
+    const cacheData = JSON.parse(fs.readFileSync(CACHE_FILE, "utf-8"));
+    songCache = new Map(Object.entries(cacheData));
+    console.log(`[Song Cache] Loaded ${songCache.size} cached songs from disk`);
+  }
+} catch (err) {
+  console.warn("[Song Cache] Failed to load cache file, starting fresh:", err);
+}
+
+// Save cache to file
+function saveCacheToFile() {
+  try {
+    const cacheObj = Object.fromEntries(songCache.entries());
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(cacheObj, null, 2));
+  } catch (err) {
+    console.error("[Song Cache] Failed to save cache file:", err);
+  }
+}
+
+// Cache cleanup every 10 minutes (remove songs older than 24 hours)
 setInterval(() => {
-  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  let removed = 0;
   for (const [key, value] of songCache.entries()) {
-    if (value.timestamp < oneHourAgo) {
+    if (value.timestamp < oneDayAgo) {
       songCache.delete(key);
+      removed++;
     }
+  }
+  if (removed > 0) {
+    console.log(`[Song Cache] Cleaned up ${removed} old songs`);
+    saveCacheToFile();
   }
 }, 10 * 60 * 1000);
 
@@ -957,33 +1002,78 @@ app.post("/api/retrieve-song", async (req, res) => {
   try {
     const { target, context } = req.body;
     
+    // If no specific target provided, return the most recent song
     if (!target || !target.trim()) {
-      return res.status(400).json({
-        success: false,
-        error: "Target name is required to retrieve your song"
-      });
+      // Get all songs sorted by timestamp
+      const allSongs = Array.from(songCache.entries())
+        .map(([key, value]) => ({ key, ...value }))
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      if (allSongs.length > 0) {
+        const mostRecent = allSongs[0];
+        console.log(`[Song Retrieval] ✓ Returning most recent song (no target specified)`);
+        return res.json({
+          success: true,
+          audioUrl: mostRecent.audioUrl,
+          target: mostRecent.target,
+          context: mostRecent.context,
+          message: "Retrieved your most recent song!"
+        });
+      }
     }
 
-    // Create a cache key from the context
-    const cacheKey = `${target.toLowerCase().trim()}-${context.substring(0, 50).toLowerCase().trim()}`;
+    // Try exact context match first
+    const cacheKey = `${target.toLowerCase().trim()}-${(context || "").substring(0, 50).toLowerCase().trim()}`;
+    let cachedSong = songCache.get(cacheKey);
     
-    // Check if we have a recent song for this context
-    const cachedSong = songCache.get(cacheKey);
+    // If not found, search by target name only
+    if (!cachedSong && target) {
+      const targetLower = target.toLowerCase().trim();
+      for (const [key, value] of songCache.entries()) {
+        if (value.target?.toLowerCase().trim() === targetLower) {
+          cachedSong = value;
+          console.log(`[Song Retrieval] ✓ Found song by target match: ${target}`);
+          break;
+        }
+      }
+    }
+    
+    // If still not found, return the most recent song as fallback
+    if (!cachedSong) {
+      const allSongs = Array.from(songCache.entries())
+        .map(([key, value]) => ({ key, ...value }))
+        .filter(song => song.key.startsWith('latest-'))
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      if (allSongs.length > 0) {
+        cachedSong = allSongs[0];
+        console.log(`[Song Retrieval] ✓ Returning most recent song as fallback`);
+        return res.json({
+          success: true,
+          audioUrl: cachedSong.audioUrl,
+          target: cachedSong.target,
+          context: cachedSong.context,
+          message: "Retrieved your most recent song (no exact match found)"
+        });
+      }
+    }
     
     if (cachedSong) {
       console.log(`[Song Retrieval] ✓ Found cached song for: ${target}`);
       return res.json({
         success: true,
         audioUrl: cachedSong.audioUrl,
+        target: cachedSong.target,
+        context: cachedSong.context,
         message: "Your song was retrieved successfully!"
       });
     }
 
-    // If not in cache, return error with suggestion
-    console.log(`[Song Retrieval] ❌ No cached song found for: ${target}`);
+    // If no songs in cache at all
+    console.log(`[Song Retrieval] ❌ No songs in cache (cache size: ${songCache.size})`);
     return res.status(404).json({
       success: false,
-      error: "No recent song found for this request. The song may not have completed yet, or it may have expired. Please try generating again or use manual import."
+      error: "No songs found in cache. This could mean: (1) The song is still generating, (2) The server was recently restarted, or (3) The song generation failed. Try generating a new song or check PM2 logs."
     });
 
   } catch (error: any) {
@@ -991,6 +1081,34 @@ app.post("/api/retrieve-song", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to retrieve song. Please try manual import."
+    });
+  }
+});
+
+// NEW: Endpoint to get all recent songs
+app.get("/api/recent-songs", async (req, res) => {
+  try {
+    const recentSongs = Array.from(songCache.entries())
+      .map(([key, value]) => ({ key, ...value }))
+      .filter(song => song.key.startsWith('latest-'))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 10) // Last 10 songs
+      .map(song => ({
+        audioUrl: song.audioUrl,
+        target: song.target,
+        context: song.context.substring(0, 50) + '...',
+        timestamp: new Date(song.timestamp).toLocaleString()
+      }));
+    
+    return res.json({
+      success: true,
+      songs: recentSongs
+    });
+  } catch (error: any) {
+    console.error("[Recent Songs] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to retrieve recent songs"
     });
   }
 });
