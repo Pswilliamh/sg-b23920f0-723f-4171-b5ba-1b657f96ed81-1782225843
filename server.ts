@@ -383,7 +383,7 @@ You MUST integrate the mandatory vocabulary matrix terms: Blessing, Covenant, Gr
 
 // Added Live Suno generation API proxy route
 app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
-  const { prompt, tags, make_instrumental, wait_audio_ready } = req.body;
+  const { prompt, tags, make_instrumental, wait_audio_ready, target, context } = req.body;
   
   if (!prompt) {
     return res.status(400).json({ 
@@ -403,6 +403,8 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
   }
 
   const cleanTags = (tags || "Acoustic Folk").trim();
+  const cleanTarget = (target || "").trim();
+  const cleanContext = (context || "").trim();
 
   try {
     console.log("[Suno Bridge] ✓ API Key detected. Calling 302.AI Suno endpoint...");
@@ -561,6 +563,17 @@ app.post(["/api/generate-suno", "/api/generate"], async (req, res) => {
           console.log(`[Suno Bridge] ========================================`);
           console.log(`[Suno Bridge] 🎵 SONG READY! Download: ${extractedAudioUrl}`);
           console.log(`[Suno Bridge] ========================================`);
+          
+          // Cache the song URL with user context for easy retrieval
+          if (cleanTarget) {
+            const cacheKey = `${cleanTarget.toLowerCase().trim()}-${cleanContext.substring(0, 50).toLowerCase().trim()}`;
+            songCache.set(cacheKey, {
+              audioUrl: extractedAudioUrl,
+              timestamp: Date.now()
+            });
+            console.log(`[Suno Bridge] ✓ Cached song for retrieval: ${cacheKey}`);
+          }
+          
           return res.json({
             success: true,
             audio_urls: [extractedAudioUrl],
@@ -922,6 +935,62 @@ app.post("/api/create-checkout-session", async (req, res) => {
       url: mockSuccessUrl,
       isMock: true,
       warning: "Stripe connection failed, using high-fidelity fallback sandbox checkout simulation."
+    });
+  }
+});
+
+// Song cache for retrieval (in-memory - for production, use Redis or database)
+const songCache = new Map<string, { audioUrl: string, timestamp: number }>();
+
+// Cache cleanup every 10 minutes (remove songs older than 1 hour)
+setInterval(() => {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  for (const [key, value] of songCache.entries()) {
+    if (value.timestamp < oneHourAgo) {
+      songCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
+// Endpoint to retrieve the most recent song for a given context
+app.post("/api/retrieve-song", async (req, res) => {
+  try {
+    const { target, context } = req.body;
+    
+    if (!target || !target.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Target name is required to retrieve your song"
+      });
+    }
+
+    // Create a cache key from the context
+    const cacheKey = `${target.toLowerCase().trim()}-${context.substring(0, 50).toLowerCase().trim()}`;
+    
+    // Check if we have a recent song for this context
+    const cachedSong = songCache.get(cacheKey);
+    
+    if (cachedSong) {
+      console.log(`[Song Retrieval] ✓ Found cached song for: ${target}`);
+      return res.json({
+        success: true,
+        audioUrl: cachedSong.audioUrl,
+        message: "Your song was retrieved successfully!"
+      });
+    }
+
+    // If not in cache, return error with suggestion
+    console.log(`[Song Retrieval] ❌ No cached song found for: ${target}`);
+    return res.status(404).json({
+      success: false,
+      error: "No recent song found for this request. The song may not have completed yet, or it may have expired. Please try generating again or use manual import."
+    });
+
+  } catch (error: any) {
+    console.error("[Song Retrieval] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to retrieve song. Please try manual import."
     });
   }
 });

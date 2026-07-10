@@ -1087,6 +1087,73 @@ export default function App() {
     alert("🎵 Song loaded successfully! You can now create your gift card and share it.");
   };
 
+  const handleAutoRetrieveSong = async () => {
+    setError("");
+    setIsProcessing(true);
+
+    try {
+      // Call server endpoint to retrieve the most recent song for this context
+      const response = await fetch("/api/retrieve-song", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: target.trim(),
+          context: context.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.success || !data.audioUrl) {
+        throw new Error(data.error || "Could not retrieve your song. Please try manual import.");
+      }
+
+      // Load the retrieved song
+      const retrievedSong: SongData = {
+        id: `retrieved-${Date.now()}`,
+        title: `Song for ${target || "Someone Special"}`,
+        target: target || "Someone Special",
+        context: context || "A beautiful personalized song",
+        setType: setType,
+        tempo: "Retrieved from Server",
+        genre: customGenre || "Acoustic Folk",
+        artistIntro: `Your personalized song for ${target || "you"}.`,
+        lyricSections: [
+          {
+            sectionName: "Retrieved Song",
+            lines: ["Your song was successfully generated!", "Enjoy the music!"],
+            chords: ["G", "C"],
+            timestamps: [0, 30]
+          }
+        ],
+        totalDurationSeconds: 120
+      };
+
+      setCurrentSong(retrievedSong);
+      setAudioUrl(data.audioUrl);
+      setDownloadUrl(data.audioUrl);
+
+      if (audioRef.current) {
+        audioRef.current.src = data.audioUrl;
+        audioRef.current.load();
+      }
+
+      setGenerationProgress(100);
+      setIsGenerating(false);
+      setIsRendering(false);
+      setShowManualImport(false);
+      setStage(3);
+
+      alert("🎉 Your song was retrieved successfully! Continue building your gift card below.");
+    } catch (err: any) {
+      console.error("Auto-retrieval error:", err);
+      setError(err.message || "Could not retrieve song automatically. Please try manual import.");
+      setShowManualImport(true);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleShareWhatsApp = () => {
     if (!currentSong) return;
     const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
@@ -1409,16 +1476,33 @@ export default function App() {
                             <p className="text-[10px] text-amber-400 font-mono">
                               ⚠️ Taking longer than expected?
                             </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowManualImport(true);
-                                setIsGenerating(false);
-                              }}
-                              className="px-3 py-1.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all"
-                            >
-                              Import Song Manually
-                            </button>
+                            <div className="flex flex-col gap-2">
+                              <button
+                                type="button"
+                                onClick={handleAutoRetrieveSong}
+                                disabled={isProcessing}
+                                className="px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                              >
+                                {isProcessing ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                    Retrieving...
+                                  </>
+                                ) : (
+                                  <>🎵 Retrieve My Song</>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowManualImport(true);
+                                  setIsGenerating(false);
+                                }}
+                                className="px-3 py-1.5 bg-transparent hover:bg-white/10 text-[#FFD700]/70 hover:text-[#FFD700] text-[9px] font-mono rounded-lg transition-all"
+                              >
+                                Or paste URL manually
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1982,17 +2066,34 @@ export default function App() {
                   {error && (
                     <div className="bg-red-950/40 border border-red-500/30 p-3 rounded-xl text-xs font-mono text-red-300 w-full text-center">
                       ⚠️ {error}
-                      {error.includes("95") || error.includes("502") || error.includes("timeout") ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowManualImport(true);
-                            setError("");
-                          }}
-                          className="block w-full mt-2 px-3 py-1.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all"
-                        >
-                          Import Song Manually Instead
-                        </button>
+                      {(error.includes("95") || error.includes("502") || error.includes("timeout") || error.includes("overload")) ? (
+                        <div className="flex flex-col gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={handleAutoRetrieveSong}
+                            disabled={isProcessing}
+                            className="w-full px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {isProcessing ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                Retrieving...
+                              </>
+                            ) : (
+                              <>🎵 Retrieve My Song</>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowManualImport(true);
+                              setError("");
+                            }}
+                            className="text-[9px] text-[#FFD700]/70 hover:text-[#FFD700] underline"
+                          >
+                            Or import manually
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                   )}
