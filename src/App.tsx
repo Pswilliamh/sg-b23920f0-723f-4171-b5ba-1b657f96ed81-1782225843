@@ -1513,9 +1513,9 @@ export default function App() {
                     <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/40 shadow-[0_0_25px_rgba(255,215,0,0.2)] bg-[#120e0a]/95 flex flex-col justify-center items-center p-6 aspect-video min-h-[200px] space-y-4">
                       <div className="w-full space-y-3">
                         <div className="text-center space-y-1">
-                          <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wider">🎵 Manual Song Import</h4>
+                          <h4 className="text-sm font-bold text-[#FFD700] uppercase tracking-wider">🎵 Import Your Song</h4>
                           <p className="text-[10px] text-white/60 font-sans">
-                            Paste your song URL from PM2 logs or previous generation
+                            Paste any song URL to create your gift card and share it
                           </p>
                         </div>
 
@@ -1527,9 +1527,18 @@ export default function App() {
                             type="url"
                             value={manualSongUrl}
                             onChange={(e) => setManualSongUrl(e.target.value)}
-                            placeholder="https://file.302.ai/gpt/imgs/..."
+                            placeholder="https://file.302.ai/gpt/imgs/... or any MP3 URL"
                             className="w-full bg-black/80 border border-[#FFD700]/30 rounded-lg px-3 py-2 text-white text-[11px] placeholder-white/30 focus:outline-none focus:border-[#FFD700] font-mono"
                           />
+                        </div>
+
+                        <div className="bg-[#FFD700]/10 border border-[#FFD700]/20 rounded-lg p-3 space-y-1">
+                          <p className="text-[9px] text-[#FFD700]/80 font-bold">💡 Use Cases:</p>
+                          <ul className="text-[8px] text-white/60 space-y-0.5 list-disc list-inside">
+                            <li>Test gift card creation with any of your 7 existing songs</li>
+                            <li>Import songs when generation stalls at 95%</li>
+                            <li>Re-use old songs for different recipients</li>
+                          </ul>
                         </div>
 
                         <div className="flex gap-2">
@@ -1538,7 +1547,7 @@ export default function App() {
                             onClick={handleLoadManualSong}
                             className="flex-1 px-4 py-2.5 bg-[#FFD700] hover:bg-[#FCE068] text-black text-xs font-bold rounded-lg transition-all"
                           >
-                            ✅ Load Song & Continue to Gift Card
+                            ✅ Continue to Gift Card
                           </button>
                           <button
                             type="button"
@@ -1551,10 +1560,6 @@ export default function App() {
                             Cancel
                           </button>
                         </div>
-
-                        <p className="text-[9px] text-white/40 font-sans italic text-center">
-                          After loading, you'll be able to create gift cards and share your song
-                        </p>
                       </div>
                     </div>
                   ) : audioUrl ? (
@@ -2668,6 +2673,39 @@ export default function App() {
                   <div className="w-1.5 bg-[#FFD700]/45 rounded-full visualizer-pillar" style={{ height: "40%", animationDelay: "0.6s" }}></div>
                   <div className="w-1.5 bg-[#FFD700]/90 rounded-full visualizer-pillar" style={{ height: "95%", animationDelay: "0.33s" }}></div>
                 </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleGenerateSong}
+                  disabled={isGenerating || isRendering || isProcessing}
+                  className={`flex-1 py-4 rounded-xl font-bold text-base transition-all shadow-[0_0_30px_rgba(255,215,0,0.3)] ${
+                    isGenerating || isRendering || isProcessing
+                      ? "bg-gray-600 cursor-not-allowed opacity-50"
+                      : "bg-gradient-to-r from-[#FFD700] to-[#FCE068] text-[#1c1917] hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
+                >
+                  {isGenerating || isRendering || isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-[#1c1917]/30 border-t-[#1c1917] rounded-full animate-spin" />
+                      CREATING MAGIC...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Sparkles size={20} />
+                      GENERATE MY SONG NOW
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowManualImport(true)}
+                  className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-all border border-[#FFD700]/30"
+                >
+                  Skip to Gift Card →
+                </button>
               </div>
 
             </motion.div>
