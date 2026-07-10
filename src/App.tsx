@@ -1110,43 +1110,46 @@ export default function App() {
         throw new Error(data.error || "Could not retrieve your song. Please try manual import.");
       }
 
-      // Load the retrieved song
-      const retrievedSong: SongData = {
-        id: `retrieved-${Date.now()}`,
-        title: `Song for ${target || "Someone Special"}`,
-        target: target || "Someone Special",
-        context: context || "A beautiful personalized song",
-        setType: setType,
-        tempo: "Retrieved from Server",
-        genre: customGenre || "Acoustic Folk",
-        artistIntro: `Your personalized song for ${target || "you"}.`,
-        lyricSections: [
-          {
-            sectionName: "Retrieved Song",
-            lines: ["Your song was successfully generated!", "Enjoy the music!"],
-            chords: ["G", "C"],
-            timestamps: [0, 30]
-          }
-        ],
-        totalDurationSeconds: 120
-      };
+      // Show the URL to the user
+      const urlMessage = `🎉 Song Found!\n\nYour song URL:\n${data.audioUrl}\n\nClick OK to load it into the player and continue to gift card creation.`;
+      
+      if (confirm(urlMessage)) {
+        // Load the retrieved song
+        const retrievedSong: SongData = {
+          id: `retrieved-${Date.now()}`,
+          title: `Song for ${target || "Someone Special"}`,
+          target: target || "Someone Special",
+          context: context || "A beautiful personalized song",
+          setType: setType,
+          tempo: "Retrieved from Server",
+          genre: customGenre || "Acoustic Folk",
+          artistIntro: `Your personalized song for ${target || "you"}.`,
+          lyricSections: [
+            {
+              sectionName: "Retrieved Song",
+              lines: ["Your song was successfully generated!", "Enjoy the music!"],
+              chords: ["G", "C"],
+              timestamps: [0, 30]
+            }
+          ],
+          totalDurationSeconds: 120
+        };
 
-      setCurrentSong(retrievedSong);
-      setAudioUrl(data.audioUrl);
-      setDownloadUrl(data.audioUrl);
+        setCurrentSong(retrievedSong);
+        setAudioUrl(data.audioUrl);
+        setDownloadUrl(data.audioUrl);
 
-      if (audioRef.current) {
-        audioRef.current.src = data.audioUrl;
-        audioRef.current.load();
+        if (audioRef.current) {
+          audioRef.current.src = data.audioUrl;
+          audioRef.current.load();
+        }
+
+        setGenerationProgress(100);
+        setIsGenerating(false);
+        setIsRendering(false);
+        setShowManualImport(false);
+        setStage(3);
       }
-
-      setGenerationProgress(100);
-      setIsGenerating(false);
-      setIsRendering(false);
-      setShowManualImport(false);
-      setStage(3);
-
-      alert("🎉 Your song was retrieved successfully! Continue building your gift card below.");
     } catch (err: any) {
       console.error("Auto-retrieval error:", err);
       setError(err.message || "Could not retrieve song automatically. Please try manual import.");
@@ -2698,15 +2701,22 @@ export default function App() {
                     </span>
                   )}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowManualImport(true)}
-                  className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-all border border-[#FFD700]/30"
-                >
-                  Skip to Gift Card →
-                </button>
               </div>
+
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-[9px] text-white/40 font-mono uppercase">Already have a song?</span>
+                <div className="flex-1 h-px bg-white/10"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowManualImport(true)}
+                className="w-full px-6 py-3 bg-white/5 hover:bg-white/10 text-[#FFD700] rounded-xl font-bold text-sm transition-all border-2 border-[#FFD700]/30 hover:border-[#FFD700]/60 flex items-center justify-center gap-2"
+              >
+                <Gift size={16} />
+                Import My Song & Create Gift Card
+              </button>
 
             </motion.div>
           )}
