@@ -755,7 +755,9 @@ export default function App() {
           prompt: sunoPrompt,
           tags: `${customGenre}, ${voiceTags}, acoustic, folk, emotional, heartfelt`,
           make_instrumental: false,
-          wait_audio_ready: true
+          wait_audio_ready: true,
+          target: target.trim(),
+          context: context.trim()
         })
       });
 
