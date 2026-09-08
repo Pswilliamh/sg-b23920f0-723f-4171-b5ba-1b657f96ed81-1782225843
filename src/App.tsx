@@ -40,17 +40,6 @@ export default function App() {
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
   const previewVideoSrc = "https://drive.google.com/uc?export=download&id=1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC";
   const [audioUrl, setAudioUrl] = useState<string>("");
-  const [downloadUrl, setDownloadUrl] = useState<string>("");
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [showManualImport, setShowManualImport] = useState(false);
-  const [manualSongUrl, setManualSongUrl] = useState("");
-  
-  // NEW: Dual audio system
-  const [ttsAudioUrl, setTtsAudioUrl] = useState<string>("");
-  const [sunoAudioUrl, setSunoAudioUrl] = useState<string>("");
-  const [generatedLyrics, setGeneratedLyrics] = useState<string>("");
-  const [showGiftCard, setShowGiftCard] = useState(false);
-  const [generationLog, setGenerationLog] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sunoStatus, setSunoStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
