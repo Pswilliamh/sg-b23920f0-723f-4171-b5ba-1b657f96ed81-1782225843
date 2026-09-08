@@ -35,6 +35,14 @@ export default function App() {
   const [voiceMode, setVoiceMode] = useState<"addon" | "replace" | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  
+  // Dual audio system states
+  const [ttsAudioUrl, setTtsAudioUrl] = useState<string>("");
+  const [sunoAudioUrl, setSunoAudioUrl] = useState<string>("");
+  const [generatedLyrics, setGeneratedLyrics] = useState<string>("");
+  const [showGiftCard, setShowGiftCard] = useState(false);
+  const [generationLog, setGenerationLog] = useState<string[]>([]);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<number | null>(null);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
