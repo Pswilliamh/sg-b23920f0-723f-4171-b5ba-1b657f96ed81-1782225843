@@ -971,6 +971,39 @@ try {
   console.warn("[Song Cache] Failed to load cache file, starting fresh:", err);
 }
 
+// Pre-populate cache with existing songs from GENERATED_SONGS.md
+if (songCache.size === 0) {
+  const existingSongs = [
+    { url: "https://file.302.ai/gpt/imgs/20260626/7407b0205cf4016f7a8ac47ea29cc8a3.mp3", target: "Song1", context: "First generated song" },
+    { url: "https://file.302.ai/gpt/imgs/20260626/9f1d3e56bdeee00c1a7d55411f6cb813.mp3", target: "Song2", context: "Second generated song" },
+    { url: "https://file.302.ai/gpt/imgs/20260626/2dd3d68ac58090cdfe52a6e16285a983.mp3", target: "Song3", context: "Third generated song" },
+    { url: "https://file.302.ai/gpt/imgs/20260626/58c476a34e7a33ffc8bbff39c9a4e703.mp3", target: "Song4", context: "Fourth generated song" },
+    { url: "https://file.302.ai/gpt/imgs/20260626/35f17d68bbf34e5a0b9bffe64ad7ad93.mp3", target: "Song5", context: "Fifth generated song" },
+    { url: "https://file.302.ai/gpt/imgs/20260710/01df19b52c89d43d62c77567ec7cb1f5.mp3", target: "Haddi", context: "Haddi's first song" },
+    { url: "https://file.302.ai/gpt/imgs/20260710/f8cca15ccfd957931d6c90c6ac3e22cb.mp3", target: "Haddi", context: "Haddi's second song" },
+    { url: "https://file.302.ai/gpt/imgs/20260710/3c734689c38def6f1b0e9fc4896ff14a.mp3", target: "Latest", context: "Most recent song" }
+  ];
+
+  existingSongs.forEach((song, idx) => {
+    const timestamp = Date.now() - ((existingSongs.length - idx) * 60000);
+    const latestKey = `latest-${timestamp}`;
+    const contextKey = `${song.target.toLowerCase()}-${song.context.substring(0, 50).toLowerCase()}`;
+    
+    const entry = {
+      audioUrl: song.url,
+      timestamp: timestamp,
+      target: song.target,
+      context: song.context
+    };
+    
+    songCache.set(latestKey, entry);
+    songCache.set(contextKey, entry);
+  });
+  
+  saveCacheToFile();
+  console.log(`[Song Cache] Pre-populated with ${existingSongs.length} existing songs`);
+}
+
 // Save cache to file
 function saveCacheToFile() {
   try {

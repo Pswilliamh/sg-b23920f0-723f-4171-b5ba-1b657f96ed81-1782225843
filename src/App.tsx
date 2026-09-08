@@ -29,7 +29,7 @@ export default function App() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
-  const [manualSongUrl, setManualSongUrl] = useState<string>("");
+  const [manualSongUrl, setManualSongUrl] = useState("");
   const [showManualImport, setShowManualImport] = useState(false);
   const [uploadedVoiceFile, setUploadedVoiceFile] = useState<File | null>(null);
   const [voiceMode, setVoiceMode] = useState<"addon" | "replace" | null>(null);
@@ -39,7 +39,7 @@ export default function App() {
   const recordingTimerRef = useRef<number | null>(null);
   const mainVideoSrc = "https://drive.google.com/uc?export=download&id=1H7bdSkULkzoNQGqqno26_KJzAPsZUPL2";
   const previewVideoSrc = "https://drive.google.com/uc?export=download&id=1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC";
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sunoStatus, setSunoStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
@@ -167,7 +167,7 @@ export default function App() {
   const [audioDuration, setAudioDuration] = useState(120);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.8);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const toggleAudioPlayback = () => {
     if (!audioRef.current) return;
@@ -669,190 +669,111 @@ export default function App() {
   };
 
   const handleStrumSong = async () => {
-    const valEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!gifterEmail.trim()) {
-      setError("Please specify Your Email (Gifter) - this is required so Haddi can deliver your digital keepsake!");
+    if (!target.trim() || !context.trim()) {
+      setError("Please fill in both the recipient's name and your story/context.");
       return;
     }
-    if (!valEmail(gifterEmail)) {
-      setError("Please enter a valid Gifter Email format.");
-      return;
-    }
-    if (!recipientEmail.trim()) {
-      setError("Please specify the Recipient's Email - this is required so Haddi can dedicate the song correctly!");
-      return;
-    }
-    if (!valEmail(recipientEmail)) {
-      setError("Please enter a valid Recipient Email format.");
-      return;
-    }
-    if (!target.trim()) {
-      setError("Please specify who you are creating this song for.");
-      return;
-    }
-    const wordCount = context.trim() === "" ? 0 : context.trim().split(/\s+/).length;
-    if (wordCount > 500) {
-      setError("Please keep your Context & Special Story under 500 words before strumming.");
-      return;
-    }
+
     setError("");
     setIsGenerating(true);
-    setIsRendering(true);
-    setGenerationProgress(0);
-
-    const progressInterval = setInterval(() => {
-      setGenerationProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(progressInterval);
-          return 95;
-        }
-        return prev + (Math.random() * 8 + 2);
-      });
-    }, 1000);
+    setIsRendering(false);
+    setGenerationProgress(10);
+    setGenerationLog(["Starting dual-audio generation..."]);
+    setShowGiftCard(false);
+    setTtsAudioUrl("");
+    setSunoAudioUrl("");
+    setGeneratedLyrics("");
 
     try {
-      const selectedVoice = voiceStyleOptions.find(v => v.id === voiceStyle);
-      const voiceTags = selectedVoice ? selectedVoice.tags : "male vocalist, warm voice";
+      // STEP 1: Generate Google TTS immediately (5-10 seconds) for instant gratification
+      setGenerationProgress(20);
+      setGenerationLog(prev => [...prev, "Generating instant audio preview with Google TTS..."]);
 
-      // Step 1: Generate song lyrics via Gemini
-      const res = await fetch("/api/generate-song", {
+      const ttsPromise = fetch("/api/generate-haddi-audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          prompt: `${context.trim()} for ${target.trim()}` 
+        })
+      });
+
+      // STEP 2: Start full song generation with Suno (60-90 seconds) in parallel
+      setGenerationProgress(30);
+      setGenerationLog(prev => [...prev, "Starting full musical production..."]);
+
+      const sunoPromise = fetch("/api/generate-song-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userPrompt: context.trim(),
           target: target.trim(),
           context: context.trim(),
-          setType,
-          customGenre,
-          voiceStyle: voiceTags,
-          gifterEmail: gifterEmail.trim(),
-          recipientEmail: recipientEmail.trim()
+          customGenre: customGenre || "acoustic, emotional"
         })
       });
 
-      const data = await res.json();
-      if (!data.success || !data.song) {
-        throw new Error(data.error || "Minstrel song generation failed. Please try again.");
+      // Wait for TTS first (should be fast)
+      const ttsRes = await ttsPromise;
+      const ttsData = await ttsRes.json();
+
+      if (ttsData.success && ttsData.audioUrl) {
+        setTtsAudioUrl(ttsData.audioUrl);
+        setAudioUrl(ttsData.audioUrl);
+        setGenerationProgress(50);
+        setGenerationLog(prev => [...prev, "✓ Instant preview ready! Playing now..."]);
+        setShowGiftCard(true); // Show gift card immediately with TTS audio
+        
+        if (audioRef.current) {
+          audioRef.current.src = ttsData.audioUrl;
+          audioRef.current.load();
+        }
       }
 
-      const returnedSong: SongData = data.song;
-      setCurrentSong(returnedSong);
+      // Continue waiting for full Suno song
+      setGenerationLog(prev => [...prev, "Waiting for full musical production (60-90 sec)..."]);
+      
+      let sunoCheckInterval = setInterval(() => {
+        setGenerationProgress(prev => Math.min(prev + 2, 95));
+      }, 2000);
 
-      if ((setType === "extended" || setType === "premium" || setType === "legacy") && data.variations) {
-        setAllVariations(data.variations);
-        setActiveVariationIdx(0);
+      const sunoRes = await sunoPromise;
+      clearInterval(sunoCheckInterval);
+      
+      const sunoData = await sunoRes.json();
+
+      if (sunoData.success && sunoData.audioUrl) {
+        setSunoAudioUrl(sunoData.audioUrl);
+        setAudioUrl(sunoData.audioUrl);
+        setDownloadUrl(sunoData.audioUrl);
+        setGeneratedLyrics(sunoData.lyrics || context);
+        setGenerationProgress(100);
+        setGenerationLog(prev => [...prev, "✓ Full song ready! Upgraded audio."]);
+        
+        if (audioRef.current) {
+          audioRef.current.src = sunoData.audioUrl;
+          audioRef.current.load();
+        }
+
+        setIsGenerating(false);
+        setStage(3);
       } else {
-        setAllVariations([returnedSong]);
-        setActiveVariationIdx(0);
+        throw new Error(sunoData.error || "Full song generation failed - but TTS audio is available!");
       }
-
-      // Step 2: Generate audio via Suno API
-      console.log("Calling Suno API to generate audio with vocals...");
-      const sunoPrompt = `${context.trim()}\n\nCreate a ${customGenre} song with ${voiceTags} vocals for ${target.trim()}.`;
-      
-      const sunoRes = await fetch("/api/generate-suno", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: sunoPrompt,
-          tags: `${customGenre}, ${voiceTags}, acoustic, folk, emotional, heartfelt`,
-          make_instrumental: false,
-          wait_audio_ready: true,
-          target: target.trim(),
-          context: context.trim()
-        })
-      });
-
-      // Check if response is ok and parse properly
-      if (!sunoRes.ok) {
-        const errorText = await sunoRes.text();
-        console.error("Suno API error response:", errorText);
-        
-        if (sunoRes.status === 502) {
-          throw new Error("🔄 302.AI server is temporarily overloaded (502 Bad Gateway). Your song credits were NOT charged. Please wait 30 seconds and try again. If this persists, check the PM2 logs - your song may have generated successfully in the background! Thank you for your patience with My-Gift-Song! 🙏");
-        }
-        
-        throw new Error(`Suno API returned ${sunoRes.status}: ${sunoRes.statusText}. Please check your API key and account credits.`);
-      }
-
-      // Get response text first, then try to parse as JSON
-      const responseText = await sunoRes.text();
-      let sunoData;
-      
-      try {
-        sunoData = JSON.parse(responseText);
-      } catch (parseErr) {
-        console.error("Failed to parse Suno response as JSON:", responseText.substring(0, 200));
-        throw new Error("Suno API returned an invalid response format (HTML instead of JSON). The service may be temporarily unavailable or the API key may be incorrect. Thank you for using My-Gift-Song today!");
-      }
-
-      console.log("Suno API response:", sunoData);
-
-      // Check if Suno generation was successful
-      if (!sunoData.success && sunoData.code !== 200) {
-        // Check if it's a retryable error
-        if (sunoData.isRetryable) {
-          throw new Error("302.AI server is temporarily overloaded. Your credits were NOT charged. Please try again in 30 seconds. 🙏");
-        }
-        throw new Error(sunoData.error || "Suno music generation failed. Please check your API key and account credits at https://302.ai. Thank you for trying My-Gift-Song!");
-      }
-
-      // Extract audio URL - server returns { success: true, audio_urls: [...], download_url: "..." }
-      let liveTrackUrl = null;
-      let directDownloadUrl = null;
-      
-      // PRIMARY: Check server's audio_urls array (what our backend returns)
-      if (sunoData.audio_urls && Array.isArray(sunoData.audio_urls) && sunoData.audio_urls.length > 0) {
-        liveTrackUrl = sunoData.audio_urls[0];
-        directDownloadUrl = sunoData.download_url || liveTrackUrl;
-        console.log("✓ Suno audio URL extracted from server response:", liveTrackUrl);
-      }
-      // FALLBACK: Check 302.AI's nested structure (if server passes raw response)
-      else if (sunoData.data && sunoData.data.data && Array.isArray(sunoData.data.data) && sunoData.data.data[0]?.audio_url) {
-        liveTrackUrl = sunoData.data.data[0].audio_url;
-        directDownloadUrl = liveTrackUrl;
-        console.log("✓ Suno audio URL extracted from nested 302.AI data:", liveTrackUrl);
-      }
-      // FALLBACK: Check direct url property
-      else if (sunoData.url) {
-        liveTrackUrl = sunoData.url;
-        directDownloadUrl = liveTrackUrl;
-        console.log("✓ Suno audio URL extracted from url property:", liveTrackUrl);
-      }
-
-      // If no audio URL, fail clearly with download suggestion
-      if (!liveTrackUrl) {
-        console.error("Failed to extract audio URL. Full response:", JSON.stringify(sunoData, null, 2));
-        throw new Error("Suno API did not return an audio URL. The song may have generated successfully - check the browser console or PM2 logs for the download link. Thank you for your patience!");
-      }
-
-      setGenerationProgress(100);
-      setAudioUrl(liveTrackUrl);
-      setDownloadUrl(directDownloadUrl || liveTrackUrl);
-      
-      if (audioRef.current) {
-        audioRef.current.src = liveTrackUrl;
-        audioRef.current.load();
-      }
-
-      // Show success message with download link
-      setTimeout(() => {
-        alert(`🎉 Your song is ready!\n\n✅ Playing in the audio player below\n🔗 Direct download link copied to clipboard\n\nThank you for using My-Gift-Song today! 🎵`);
-        
-        // Copy download URL to clipboard
-        if (directDownloadUrl && navigator.clipboard) {
-          navigator.clipboard.writeText(directDownloadUrl).catch(() => {});
-        }
-      }, 500);
 
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Trouble processing acoustic song generation. Please retry.");
-      setGenerationProgress(0);
-    } finally {
-      clearInterval(progressInterval);
-      setIsGenerating(false);
-      setIsRendering(false);
-      setTimeout(() => setGenerationProgress(0), 2000);
+      console.error("Song generation error:", err);
+      
+      // If we have TTS audio, that's good enough
+      if (ttsAudioUrl) {
+        setError("Full song generation timed out, but your instant preview is ready to share!");
+        setGenerationProgress(100);
+        setIsGenerating(false);
+        setStage(3);
+      } else {
+        setError(err.message || "Generation failed. Try again or use manual import.");
+        setGenerationProgress(95);
+        setIsGenerating(false);
+      }
     }
   };
 
@@ -1567,150 +1488,33 @@ export default function App() {
                       </div>
                     </div>
                   ) : audioUrl ? (
-                    <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/40 shadow-[0_0_25px_rgba(255,215,0,0.2)] bg-[#120e0a]/95 flex flex-col justify-center items-center p-5 aspect-video min-h-[200px] space-y-3.5">
-                      <div className="flex items-center gap-3.5 w-full">
-                        <div className={`p-3.5 rounded-full bg-black/60 border-2 border-[#FFD700] text-[#FFD700] relative shrink-0 ${isAudioPlaying ? 'animate-spin [animation-duration:10s]' : ''}`}>
-                          <Disc size={26} />
-                          <div className="absolute -inset-1 bg-[#FFD700]/10 blur-md rounded-full -z-10" />
-                        </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <span className="text-[9px] font-mono text-[#FFD700] uppercase tracking-widest block font-bold">Suno AI Master Stream</span>
-                          <h4 className="text-xs md:text-sm font-bold text-white truncate font-sans uppercase">
-                            {currentSong?.title || "Bespoke Acoustic Masterpiece"}
-                          </h4>
-                          <p className="text-[10px] text-white/50 font-mono truncate">
-                            Style: {customGenre} • {setType.toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Active HTML5 Audio Player */}
+                    <div className="relative w-full rounded-xl overflow-hidden border border-[#FFD700]/40 shadow-[0_0_25px_rgba(255,215,0,0.2)] bg-[#120e0a]/95 flex flex-col justify-center items-center p-4">
                       <audio
-                        id="suno-audio-player"
-                        src={audioUrl}
                         ref={audioRef}
-                        onTimeUpdate={handleAudioTimeUpdate}
-                        onEnded={() => setIsAudioPlaying(false)}
-                        autoPlay={true}
-                        muted={false}
-                        controls={true}
-                        className="w-full mt-2 block rounded-lg bg-black/40 border border-[#FFD700]/20 text-white"
+                        src={audioUrl}
+                        controls
+                        className="w-full opacity-90 hover:opacity-100 transition-opacity"
+                        style={{ filter: "brightness(1.2) saturate(1.1)" }}
                       />
-
-                      {/* Direct Download Link */}
-                      {downloadUrl && (
-                        <div className="mt-4 bg-gradient-to-r from-[#251e19]/80 to-[#1c1917]/80 border-2 border-[#FFD700]/40 rounded-xl p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <p className="text-xs font-bold text-[#FFD700] uppercase tracking-wider mb-1">
-                                🎵 Direct Download Link
-                              </p>
-                              <p className="text-[10px] text-white/60 font-mono truncate">
-                                {downloadUrl}
-                              </p>
-                            </div>
-                            <a
-                              href={downloadUrl}
-                              download="my-gift-song.mp3"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-[#FFD700] hover:bg-[#FFD700]/90 text-[#1c1917] font-bold text-xs rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2 whitespace-nowrap"
-                            >
-                              <span>⬇️</span>
-                              Download MP3
-                            </a>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Progress Line */}
-                      <div className="w-full space-y-1">
-                        <div className="flex justify-between text-[9px] font-mono text-white/40">
-                          <span>{formatTime(audioCurrentTime)}</span>
-                          <span>{formatTime(audioDuration || 120)}</span>
-                        </div>
-                        <div
-                          onClick={handleAudioSeek}
-                          className="h-1.5 w-full bg-white/10 rounded-full cursor-pointer relative overflow-hidden group hover:h-2 transition-all"
-                        >
-                          <div
-                            className="h-full bg-gradient-to-r from-[#FFD700] via-[#FCE068] to-[#FFD700] rounded-full transition-all duration-100"
-                            style={{ width: `${(audioCurrentTime / (audioDuration || 1)) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Lower Action Layout */}
-                      <div className="flex items-center justify-between w-full pt-1.5">
-                        <button
-                          type="button"
-                          onClick={toggleAudioPlayback}
-                          className="bg-[#FFD700] hover:bg-[#FCE068] text-black rounded-lg px-4 py-1.5 text-[10px] font-mono tracking-wider font-extrabold uppercase transition-all duration-200 active:scale-95 flex items-center gap-1.5 shadow-[0_2px_8px_rgba(255,215,0,0.15)] shrink-0"
-                        >
-                          {isAudioPlaying ? (
-                            <>
-                              <Pause size={12} fill="currentColor" /> PAUSE
-                            </>
-                          ) : (
-                            <>
-                              <Play size={12} fill="currentColor" /> PLAY
-                            </>
-                          )}
-                        </button>
-
-                        <div className="flex items-center gap-1 bg-black/40 rounded-full px-2 py-1 border border-white/5">
-                          <p className="text-[8px] font-mono text-emerald-400 uppercase tracking-widest flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-[#FFD700] animate-ping" />
-                            LIVE
-                          </p>
-                        </div>
-
-                        {/* Mute and volume */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (audioRef.current) {
-                                const targetMute = !audioRef.current.muted;
-                                audioRef.current.muted = targetMute;
-                                setIsAudioMuted(targetMute);
-                              }
-                            }}
-                            className="text-white/60 hover:text-white p-1"
-                          >
-                            {isAudioMuted ? <VolumeX size={14} className="text-red-400" /> : <Volume2 size={14} className="text-[#FFD700]" />}
-                          </button>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={audioVolume}
-                            onChange={(e) => {
-                              const newVol = parseFloat(e.target.value);
-                              setAudioVolume(newVol);
-                              if (audioRef.current) {
-                                audioRef.current.volume = newVol;
-                                audioRef.current.muted = false;
-                                setIsAudioMuted(false);
-                              }
-                            }}
-                            className="w-14 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#FFD700]"
-                          />
-                        </div>
-                      </div>
+                      <a
+                        href={downloadUrl || audioUrl}
+                        download={`gift-song-${target}.mp3`}
+                        className="mt-3 px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-[#1c1917] text-xs font-bold rounded-lg transition-all flex items-center gap-2"
+                      >
+                        <Download size={14} />
+                        Download Song
+                      </a>
                     </div>
-                  ) : (
-                    <div className="relative w-full rounded-xl overflow-hidden border border-[#C5A880]/20 shadow-xl bg-black/80 flex items-center justify-center aspect-video min-h-[200px]">
-                      <iframe 
-                        id="premium-preview-video"
-                        src="https://drive.google.com/file/d/1dvyq1PS79s4e3GZlcDxZ3tK2lGKktyiC/preview" 
-                        width="100%" 
-                        height="450" 
-                        allow="autoplay" 
-                        style={{ border: "none", borderRadius: "12px", backgroundColor: "#050b14" }}
-                      ></iframe>
-                    </div>
+                  ) : null}
+
+                  {/* NEW: Gift Card appears immediately after TTS is ready */}
+                  {showGiftCard && (ttsAudioUrl || sunoAudioUrl || audioUrl) && (
+                    <GiftSongCard 
+                      audioUrl={sunoAudioUrl || audioUrl} 
+                      lyrics={generatedLyrics || context}
+                      recipientName={target}
+                      title={`Gift Song for ${target}`}
+                    />
                   )}
 
                   {/* The Sound of Honor & Covenant definition panel */}
