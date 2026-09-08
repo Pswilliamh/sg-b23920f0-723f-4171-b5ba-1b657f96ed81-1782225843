@@ -1143,6 +1143,35 @@ export default function App() {
     }
   };
 
+  const handleScanLogsForSongs = async () => {
+    setIsProcessing(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/scan-logs-for-songs");
+      const data = await response.json();
+
+      if (data.success && data.songUrls && data.songUrls.length > 0) {
+        const urlList = data.songUrls.join("\n\n");
+        const message = `🎵 Found ${data.count} song(s) in logs:\n\n${urlList}\n\nMost recent:\n${data.mostRecent}\n\nCopy the URL you want and paste it in the manual import field.`;
+        
+        // Copy most recent to clipboard
+        navigator.clipboard.writeText(data.mostRecent);
+        alert(message + "\n\n✅ Most recent URL copied to clipboard!");
+        
+        // Auto-populate the manual song URL field
+        setManualSongUrl(data.mostRecent);
+      } else {
+        alert("⚠️ No songs found in recent PM2 logs. They may have been cleared or generation is still in progress.");
+      }
+    } catch (err: any) {
+      console.error("Scan logs error:", err);
+      setError(err.message || "Could not scan logs.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleShareWhatsApp = () => {
     if (!currentSong) return;
     const selectedTemplate = occasionTemplates.find(t => t.id === occasion) || occasionTemplates[0];
@@ -1546,6 +1575,27 @@ export default function App() {
                           >
                             Cancel
                           </button>
+                        </div>
+
+                        <div className="pt-3 border-t border-[#FFD700]/20">
+                          <button
+                            type="button"
+                            onClick={handleScanLogsForSongs}
+                            disabled={isProcessing}
+                            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                          >
+                            {isProcessing ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Scanning Logs...
+                              </>
+                            ) : (
+                              <>📋 Scan PM2 Logs for Songs</>
+                            )}
+                          </button>
+                          <p className="text-[8px] text-white/40 text-center mt-1 font-mono">
+                            Retrieves all completed song URLs from server logs
+                          </p>
                         </div>
                       </div>
                     </div>
