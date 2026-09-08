@@ -20,3 +20,6 @@ https://file.302.ai/gpt/imgs/20260710/01df19b52c89d43d62c77567ec7cb1f5.mp3
 
 ## Song #7 (Haddi)
 https://file.302.ai/gpt/imgs/20260710/f8cca15ccfd957931d6c90c6ac3e22cb.mp3
+
+## Song #8 (Latest - Just Generated!)
+https://file.302.ai/gpt/imgs/20260710/3c734689c38def6f1b0e9fc4896ff14a.mp3
