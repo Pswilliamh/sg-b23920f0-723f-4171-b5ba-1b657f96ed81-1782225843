@@ -1162,7 +1162,7 @@ app.post("/api/generate-song-pipeline", async (req, res) => {
     
     const client = getAiClient();
     const geminiResponse = await client.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       contents: `Transform this user input into a catchy, emotional 2-verse, 1-chorus song lyric format suitable for a custom gift song: "${userPrompt}"`,
     });
     
@@ -1201,7 +1201,7 @@ app.post("/api/generate-song-pipeline", async (req, res) => {
 
     let audioUrl = null;
     let attempts = 0;
-    const maxAttempts = 45;
+    const maxAttempts = 60; // Extended from 45 to 60 (120 seconds total)
 
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -1254,7 +1254,30 @@ app.post("/api/generate-song-pipeline", async (req, res) => {
     }
 
     if (!audioUrl) {
-      throw new Error("Song generation timed out after 90 seconds");
+      // Fallback: Try to fetch from the audiopipe staging URL directly
+      console.log("[Song Pipeline] Timeout reached. Checking audiopipe URL as fallback...");
+      
+      // Cache the task ID so user can retrieve later
+      if (target && context) {
+        const timestamp = Date.now();
+        const pendingKey = `pending-${taskId}`;
+        const contextKey = `${target.toLowerCase().trim()}-${context.substring(0, 50).toLowerCase().trim()}`;
+        
+        const cacheEntry = {
+          audioUrl: `https://audiopipe.suno.ai/?item_id=${taskId}`,
+          timestamp: timestamp,
+          target: target,
+          context: context.substring(0, 100),
+          status: "pending",
+          taskId: taskId
+        };
+        
+        songCache.set(pendingKey, cacheEntry);
+        songCache.set(contextKey, cacheEntry);
+        saveCacheToFile();
+      }
+      
+      throw new Error(`Song generation timed out after 120 seconds. Task ID: ${taskId}. The song may still be rendering - try "Retrieve My Song" in 30 seconds.`);
     }
 
     // Cache the result
@@ -1341,6 +1364,79 @@ app.post("/api/generate-haddi-audio", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: error.message || "Failed to generate audio track from server"
+    });
+  }
+});
+
+// NEW: Check if a pending Suno task has completed
+app.post("/api/check-pending-song", async (req, res) => {
+  try {
+    const { taskId } = req.body;
+    
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: "Task ID is required"
+      });
+    }
+
+    const sunoApiKey = process.env.SUNO_API_KEY || process.env.VITE_SUNO_API_KEY || "";
+    
+    const statusResponse = await fetch(`https://api.302.ai/suno/fetch/${taskId}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${sunoApiKey}`
+      }
+    });
+
+    if (!statusResponse.ok) {
+      throw new Error("Failed to check song status");
+    }
+
+    const statusText = await statusResponse.text();
+    let statusData;
+    
+    try {
+      statusData = JSON.parse(statusText);
+    } catch (e) {
+      throw new Error("Invalid response from Suno API");
+    }
+
+    let jobStatus = null;
+    let audioUrl = null;
+
+    if (statusData.data?.data && Array.isArray(statusData.data.data)) {
+      const jobData = statusData.data.data[0];
+      if (jobData) {
+        jobStatus = jobData.status;
+        audioUrl = jobData.audio_url;
+      }
+    } else if (statusData.status) {
+      jobStatus = statusData.status;
+      audioUrl = statusData.audio_url || statusData.data?.audio_url;
+    }
+
+    if (jobStatus === "SUCCESS" || jobStatus === "complete" || jobStatus === "success") {
+      if (audioUrl && !audioUrl.includes("audiopipe.suno.ai")) {
+        return res.json({
+          success: true,
+          audioUrl: audioUrl,
+          status: "complete"
+        });
+      }
+    }
+
+    return res.json({
+      success: false,
+      status: jobStatus || "still_processing",
+      message: "Song is still rendering. Try again in 30 seconds."
+    });
+
+  } catch (error: any) {
+    console.error("[Check Pending] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to check song status"
     });
   }
 });
