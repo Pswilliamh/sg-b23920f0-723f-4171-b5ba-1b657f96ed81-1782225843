@@ -1113,6 +1113,205 @@ app.get("/api/recent-songs", async (req, res) => {
   }
 });
 
+// NEW: Enhanced Song Generation Pipeline - Gemini lyrics → Suno audio
+app.post("/api/generate-song-pipeline", async (req, res) => {
+  try {
+    const { userPrompt, target, context, customGenre } = req.body;
+    
+    if (!userPrompt || !target) {
+      return res.status(400).json({
+        success: false,
+        error: "User prompt and target name are required"
+      });
+    }
+
+    console.log("[Song Pipeline] Step 1: Using Gemini to create structured lyrics...");
+    
+    const client = getAiClient();
+    const geminiResponse = await client.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: `Transform this user input into a catchy, emotional 2-verse, 1-chorus song lyric format suitable for a custom gift song: "${userPrompt}"`,
+    });
+    
+    const structuredLyrics = geminiResponse.text || userPrompt;
+    console.log("[Song Pipeline] ✓ Gemini lyrics generated");
+
+    console.log("[Song Pipeline] Step 2: Sending lyrics to Suno for audio generation...");
+    
+    const sunoApiKey = process.env.SUNO_API_KEY || process.env.VITE_SUNO_API_KEY || "";
+    if (!sunoApiKey || sunoApiKey.length < 10) {
+      throw new Error("SUNO_API_KEY not configured");
+    }
+
+    const sunoResponse = await fetch("https://api.302.ai/suno/submit/music", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sunoApiKey}`
+      },
+      body: JSON.stringify({
+        gpt_description_prompt: structuredLyrics,
+        mv: "chirp-v3-5",
+        make_instrumental: false,
+        tags: `${customGenre || "acoustic, emotional"}, heartwarming, gift song`
+      })
+    });
+
+    const sunoData = await sunoResponse.json();
+    const taskId = sunoData.data || sunoData.id || sunoData.task_id;
+
+    if (!taskId) {
+      throw new Error("Failed to initialize song generation task with Suno");
+    }
+
+    console.log(`[Song Pipeline] Step 3: Polling Suno for completion (Task ID: ${taskId})...`);
+
+    let audioUrl = null;
+    let attempts = 0;
+    const maxAttempts = 45;
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+
+      const statusResponse = await fetch(`https://api.302.ai/suno/fetch/${taskId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${sunoApiKey}`
+        }
+      });
+
+      if (!statusResponse.ok) {
+        console.warn(`[Song Pipeline] Poll ${attempts}/${maxAttempts} failed`);
+        continue;
+      }
+
+      const statusText = await statusResponse.text();
+      let statusData;
+      
+      try {
+        statusData = JSON.parse(statusText);
+      } catch (e) {
+        continue;
+      }
+
+      let jobStatus = null;
+      let extractedAudioUrl = null;
+
+      if (statusData.data?.data && Array.isArray(statusData.data.data)) {
+        const jobData = statusData.data.data[0];
+        if (jobData) {
+          jobStatus = jobData.status;
+          extractedAudioUrl = jobData.audio_url;
+        }
+      } else if (statusData.status) {
+        jobStatus = statusData.status;
+        extractedAudioUrl = statusData.audio_url || statusData.data?.audio_url;
+      }
+
+      if (jobStatus === "SUCCESS" || jobStatus === "complete" || jobStatus === "success") {
+        if (extractedAudioUrl) {
+          audioUrl = extractedAudioUrl;
+          console.log(`[Song Pipeline] ✓ Song ready! URL: ${audioUrl}`);
+          break;
+        }
+      } else if (jobStatus === "FAILED" || jobStatus === "failed") {
+        throw new Error("Suno generation failed");
+      }
+    }
+
+    if (!audioUrl) {
+      throw new Error("Song generation timed out after 90 seconds");
+    }
+
+    // Cache the result
+    if (target && context) {
+      const timestamp = Date.now();
+      const latestKey = `latest-${timestamp}`;
+      const contextKey = `${target.toLowerCase().trim()}-${context.substring(0, 50).toLowerCase().trim()}`;
+      
+      const cacheEntry = {
+        audioUrl: audioUrl,
+        timestamp: timestamp,
+        target: target,
+        context: context.substring(0, 100)
+      };
+      
+      songCache.set(latestKey, cacheEntry);
+      songCache.set(contextKey, cacheEntry);
+      saveCacheToFile();
+      
+      console.log(`[Song Pipeline] ✓ Cached song with keys: ${latestKey}, ${contextKey}`);
+    }
+
+    return res.json({ 
+      success: true, 
+      audioUrl: audioUrl, 
+      lyrics: structuredLyrics 
+    });
+
+  } catch (error: any) {
+    console.error("[Song Pipeline] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Song generation pipeline failed"
+    });
+  }
+});
+
+// NEW: Enhanced TTS endpoint using gemini-3.1-flash-tts-preview
+app.post("/api/generate-haddi-audio", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: "Prompt is required for audio generation"
+      });
+    }
+
+    const client = getAiClient();
+    
+    const interaction = await client.models.generateContent({
+      model: "gemini-3.1-flash-tts-preview",
+      contents: [{ 
+        parts: [{ 
+          text: `Create a warm, acoustic-style musical narrative for Haddi based on this user story: "${prompt}"` 
+        }] 
+      }],
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: "Kore" }
+          }
+        }
+      }
+    });
+
+    const audioBase64 = interaction.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    
+    if (!audioBase64) {
+      throw new Error("No audio data returned from TTS model");
+    }
+
+    const audioDataUrl = `data:audio/wav;base64,${audioBase64}`;
+
+    return res.json({
+      success: true,
+      audioUrl: audioDataUrl
+    });
+
+  } catch (error: any) {
+    console.error("[Haddi Audio] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to generate audio track from server"
+    });
+  }
+});
+
 // Setup Vite Dev Server / Static Ingress inside bootstrapper to support esbuild CommonJS formats
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === "production";

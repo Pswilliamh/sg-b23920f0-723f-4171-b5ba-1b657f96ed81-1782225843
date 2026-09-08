@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SongData, SetType, LyricSection, VoiceStyle, OccasionType, OccasionTemplate } from "./types";
 import { LyricCanvas } from "./components/LyricCanvas";
+import { GiftSongCard } from "./components/GiftSongCard";
 import { luteEngineInstance } from "./components/AudioEngine";
 
 export default function App() {
