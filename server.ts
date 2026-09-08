@@ -1441,6 +1441,47 @@ app.post("/api/check-pending-song", async (req, res) => {
   }
 });
 
+// NEW: Scan PM2 logs for completed song URLs
+app.get("/api/scan-logs-for-songs", async (req, res) => {
+  try {
+    const { execSync } = require("child_process");
+    
+    const logsOutput = execSync(
+      'pm2 logs --lines 500 --nostream 2>&1 | grep -E "https://file.302.ai|audio_url" | tail -50',
+      { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }
+    );
+
+    // Extract URLs from logs
+    const urlRegex = /https:\/\/file\.302\.ai\/gpt\/imgs\/[^\s"]+\.mp3/g;
+    const matches = logsOutput.match(urlRegex);
+    
+    if (!matches || matches.length === 0) {
+      return res.json({
+        success: false,
+        message: "No song URLs found in recent logs",
+        logs: logsOutput.split('\n').slice(-20)
+      });
+    }
+
+    // Deduplicate and return most recent
+    const uniqueUrls = [...new Set(matches)];
+    
+    return res.json({
+      success: true,
+      songUrls: uniqueUrls,
+      count: uniqueUrls.length,
+      mostRecent: uniqueUrls[uniqueUrls.length - 1]
+    });
+
+  } catch (error: any) {
+    console.error("[Scan Logs] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to scan logs"
+    });
+  }
+});
+
 // Setup Vite Dev Server / Static Ingress inside bootstrapper to support esbuild CommonJS formats
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === "production";

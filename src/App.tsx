@@ -42,6 +42,7 @@ export default function App() {
   const [generatedLyrics, setGeneratedLyrics] = useState<string>("");
   const [showGiftCard, setShowGiftCard] = useState(false);
   const [generationLog, setGenerationLog] = useState<string[]>([]);
+  const [pendingSunoTaskId, setPendingSunoTaskId] = useState<string>("");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<number | null>(null);
@@ -771,6 +772,13 @@ export default function App() {
     } catch (err: any) {
       console.error("Song generation error:", err);
       
+      // Extract Suno task ID from error message if present
+      const taskIdMatch = err.message?.match(/Task ID: ([a-f0-9-]+)/i);
+      if (taskIdMatch) {
+        setPendingSunoTaskId(taskIdMatch[1]);
+        setGenerationLog(prev => [...prev, `⏳ Song still rendering. Task ID: ${taskIdMatch[1]}`]);
+      }
+      
       // If we have TTS audio, that's good enough
       if (ttsAudioUrl) {
         setError("Full song generation timed out, but your instant preview is ready to share!");
@@ -1084,6 +1092,52 @@ export default function App() {
       console.error("Auto-retrieval error:", err);
       setError(err.message || "Could not retrieve song automatically. Please try manual import.");
       setShowManualImport(true);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCheckPendingSong = async () => {
+    if (!pendingSunoTaskId) {
+      setError("No pending song task found.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError("");
+    setGenerationLog(prev => [...prev, `🔍 Checking if song finished rendering...`]);
+
+    try {
+      const response = await fetch("/api/check-pending-song", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: pendingSunoTaskId })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.audioUrl) {
+        // Song is ready!
+        setSunoAudioUrl(data.audioUrl);
+        setAudioUrl(data.audioUrl);
+        setDownloadUrl(data.audioUrl);
+        setGenerationLog(prev => [...prev, `✅ Song found! URL: ${data.audioUrl}`]);
+        setGenerationProgress(100);
+        setPendingSunoTaskId("");
+        
+        if (audioRef.current) {
+          audioRef.current.src = data.audioUrl;
+          audioRef.current.load();
+        }
+
+        alert(`🎉 Your song is ready!\n\n${data.audioUrl}`);
+      } else {
+        setError(data.message || "Song still processing. Try again in 30 seconds.");
+        setGenerationLog(prev => [...prev, `⏳ Still rendering... Status: ${data.status}`]);
+      }
+    } catch (err: any) {
+      console.error("Check pending song error:", err);
+      setError(err.message || "Could not check song status.");
     } finally {
       setIsProcessing(false);
     }
@@ -1887,37 +1941,26 @@ export default function App() {
                   </div>
                   
                   {error && (
-                    <div className="bg-red-950/40 border border-red-500/30 p-3 rounded-xl text-xs font-mono text-red-300 w-full text-center">
-                      ⚠️ {error}
-                      {(error.includes("95") || error.includes("502") || error.includes("timeout") || error.includes("overload")) ? (
-                        <div className="flex flex-col gap-2 mt-3">
-                          <button
-                            type="button"
-                            onClick={handleAutoRetrieveSong}
-                            disabled={isProcessing}
-                            className="w-full px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] text-black text-[10px] font-bold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                          >
-                            {isProcessing ? (
-                              <>
-                                <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                Retrieving...
-                              </>
-                            ) : (
-                              <>🎵 Retrieve My Song</>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowManualImport(true);
-                              setError("");
-                            }}
-                            className="text-[9px] text-[#FFD700]/70 hover:text-[#FFD700] underline"
-                          >
-                            Or import manually
-                          </button>
-                        </div>
-                      ) : null}
+                    <div className="bg-red-500/20 border border-red-500/40 rounded-xl p-4 text-red-200 text-sm">
+                      <p className="font-bold">⚠️ Error</p>
+                      <p className="mt-1 text-xs">{error}</p>
+                      
+                      {pendingSunoTaskId && (
+                        <button
+                          onClick={handleCheckPendingSong}
+                          disabled={isProcessing}
+                          className="mt-3 w-full px-4 py-2 bg-[#FFD700] hover:bg-[#FCE068] disabled:opacity-50 disabled:cursor-not-allowed text-[#1c1917] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-[#1c1917]/30 border-t-[#1c1917] rounded-full animate-spin" />
+                              Checking...
+                            </>
+                          ) : (
+                            <>🎵 Retrieve My Song</>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
